@@ -26,8 +26,6 @@
             "pages": [
               "integrations/overview",
               "integrations/vapi",
-              "integrations/bland",
-              "integrations/retell",
               "integrations/twilio",
               "integrations/livekit"
             ]
