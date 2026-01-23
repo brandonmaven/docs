@@ -28,7 +28,8 @@
               "integrations/vapi",
               "integrations/bland",
               "integrations/retell",
-              "integrations/twilio"
+              "integrations/twilio",
+              "integrations/livekit"
             ]
           }
         ]
