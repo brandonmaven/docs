@@ -51,12 +51,33 @@ In your Retell agent's **Custom Functions** section, add a new function:
     },
     "description": {
       "type": "string",
-      "description": "What the payment is for"
+      "description": "What the payment is for (e.g., 'Monthly subscription')"
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["charge", "tokenize"],
+      "description": "Whether to charge immediately or just save the card for later"
+    },
+    "callback": {
+      "type": "string",
+      "description": "Phone number to transfer back to after payment"
+    },
+    "customer_id": {
+      "type": "string",
+      "description": "Your internal customer ID to associate with this payment"
     }
   },
   "required": ["amount"]
 }
 ```
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `amount` | Yes | Payment amount in dollars |
+| `description` | No | What the payment is for |
+| `mode` | No | `charge` (default) or `tokenize` to just save card |
+| `callback` | No | Phone number to transfer back to after payment |
+| `customer_id` | No | Your internal customer ID |
 
 <Warning>
   Replace `YOUR_MAVEN_API_KEY` with your actual API key (e.g., `mvn_test_xxx` or `mvn_live_xxx`)

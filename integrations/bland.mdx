@@ -42,9 +42,21 @@ In your Bland pathway, add a **Webhook** node with this configuration:
 {
   "amount": "{{amount}}",
   "from": "{{from}}",
-  "description": "{{description}}"
+  "description": "{{description}}",
+  "mode": "charge",
+  "callback": "{{callback}}",
+  "customer_id": "{{customer_id}}"
 }
 ```
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `amount` | Yes | Payment amount in dollars (e.g., 25.00) |
+| `from` | Yes | Customer's phone number (E.164 format) |
+| `description` | No | What the payment is for |
+| `mode` | No | `charge` (default) or `tokenize` to just save card |
+| `callback` | No | Phone number to transfer back to after payment |
+| `customer_id` | No | Your internal customer ID |
 
 <Warning>
   Replace `YOUR_MAVEN_API_KEY` with your actual API key (e.g., `mvn_test_xxx` or `mvn_live_xxx`)
