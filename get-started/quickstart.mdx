@@ -11,7 +11,7 @@ This guide will get you collecting payments in minutes.
 
 - A Maven account ([sign up here](https://app.trymaven.com))
 - A Stripe account connected via the dashboard
-- A voice agent (VAPI, Bland, Retell, or Twilio)
+- A voice agent (VAPI, Twilio, or LiveKit)
 
 ## Step 1: Get your API Key
 
@@ -110,19 +110,19 @@ Have your voice agent transfer the customer to the `phone_number` returned.
 
 <Tabs>
   <Tab title="VAPI">
-    Use VAPI's `transferCall` function to transfer to the Maven number.
+    VAPI handles this automatically when using Maven's tool endpoint.
 
     See [VAPI Integration](/integrations/vapi) for details.
   </Tab>
-  <Tab title="Bland">
-    Use Bland's pathway transfer node.
+  <Tab title="Twilio">
+    Use Twilio's `<Dial>` TwiML verb to transfer to the Maven number.
 
-    See [Bland Integration](/integrations/bland) for details.
+    See [Twilio Integration](/integrations/twilio) for details.
   </Tab>
-  <Tab title="Retell">
-    Use Retell's transfer function.
+  <Tab title="LiveKit">
+    Use LiveKit's SIP transfer API to transfer to the Maven number.
 
-    See [Retell Integration](/integrations/retell) for details.
+    See [LiveKit Integration](/integrations/livekit) for details.
   </Tab>
 </Tabs>
 

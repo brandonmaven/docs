@@ -209,27 +209,11 @@ Maven will POST to your webhook URL:
 
 To transfer the customer back after payment:
 
-1. Set the `callback` parameter to your LiveKit SIP number
-2. Configure a dispatch rule to route returning calls to your agent
-3. Use the context endpoint to check if the caller just paid
+1. Set the `callback` parameter to your LiveKit SIP number when creating the session
+2. Configure a dispatch rule in LiveKit to route returning calls to your agent
+3. Maven will transfer the call back to your SIP number after payment completes
 
-### Check Payment Context
-
-When a call is transferred back, check if they just paid:
-
-```python
-@function_tool()
-async def check_payment_context(context: RunContext) -> dict:
-    """Check if this caller just completed a payment."""
-    caller = context.participant.attributes.get("sip.phoneNumber")
-
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            "https://api.trymaven.com/voice/context",
-            json={"caller": caller}
-        )
-        return response.json()
-```
+The webhook will notify your server of the payment result, which you can use to update your agent's context.
 
 ---
 

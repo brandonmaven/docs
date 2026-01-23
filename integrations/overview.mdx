@@ -58,35 +58,6 @@ After payment, Maven can transfer the customer back to your agent. Pass the `cal
 
 ---
 
-## Context Endpoint
-
-When a call is transferred back, your voice agent can check if the customer just completed a payment:
-
-```bash
-POST https://api.trymaven.com/voice/context
-Content-Type: application/json
-
-{
-  "caller": "+14155551234"
-}
-```
-
-**Response (if payment found within 5 minutes):**
-```json
-{
-  "found": true,
-  "session_id": "abc-123",
-  "status": "paid",
-  "amount": 2500,
-  "currency": "USD",
-  "message": "Customer just completed payment successfully."
-}
-```
-
-This lets your agent say "Great, your payment went through!" instead of starting over.
-
----
-
 ## API Keys
 
 All integrations require a Maven API key:
