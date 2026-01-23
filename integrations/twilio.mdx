@@ -8,7 +8,7 @@ description: "Collect payments with Twilio voice"
 Integrate Maven with Twilio Voice using TwiML or Studio.
 
 <Info>
-  Twilio integrations require a server to generate TwiML responses. For a serverless experience, consider using a voice AI platform like [VAPI](/integrations/vapi), [Bland](/integrations/bland), or [Retell](/integrations/retell).
+  **Twilio Studio** can call Maven's API directly (no server needed), but your API key will be visible in Studio. **TwiML apps** require a server to generate responses. For a fully serverless experience, consider [VAPI](/integrations/vapi).
 </Info>
 
 ## Overview
@@ -116,11 +116,7 @@ app.post('/twilio/transfer-complete', (req, res) => {
 
 ## Twilio Studio
 
-In Studio, use these widgets:
-
-1. **Make HTTP Request** - Call your server to create Maven session
-2. **Connect Call To** - Transfer to the Maven phone number from response
-3. **Split Based On** - Handle completion status
+In Studio, you can call Maven's API directly without needing your own server:
 
 ### Studio Flow Example
 
@@ -128,9 +124,17 @@ In Studio, use these widgets:
 [Incoming Call]
     ↓
 [Make HTTP Request]
-    URL: https://your-server.com/twilio/create-session
+    URL: https://api.trymaven.com/v1/sessions
     Method: POST
-    Body: {"amount": "{{widgets.get_amount.result}}", "from": "{{contact.channel.address}}"}
+    Headers:
+      Authorization: Bearer YOUR_MAVEN_API_KEY
+      Content-Type: application/json
+    Body: {
+      "project": "my-project",
+      "caller": "{{contact.channel.address}}",
+      "amount": {{widgets.get_amount.result}} * 100,
+      "currency": "USD"
+    }
     ↓
 [Connect Call To]
     Number: {{widgets.create_session.parsed.phone_number}}
@@ -140,6 +144,10 @@ In Studio, use these widgets:
     "completed" → [Say "Payment successful"]
     "busy/failed/no-answer" → [Say "Payment failed"]
 ```
+
+<Warning>
+  Putting your API key in Twilio Studio means anyone with Studio access can see it. For production, consider using a server endpoint or Twilio Functions to keep the key secure.
+</Warning>
 
 ## Set Up Webhook (Optional)
 
