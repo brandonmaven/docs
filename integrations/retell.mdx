@@ -5,81 +5,190 @@ description: "Collect payments with Retell voice agents"
 
 # Retell Integration
 
-This guide shows how to integrate Maven with Retell to collect payments.
+Integrate Maven with Retell in minutes. No server required.
 
-## Overview
+## Quick Setup (5 minutes)
 
 <Steps>
-  <Step title="Add custom function">
-    Configure a function in Retell that calls Maven
+  <Step title="Get your Maven API key">
+    Go to [Dashboard → API Keys](https://app.trymaven.com/api-keys) and create a key
   </Step>
-  <Step title="Create session & transfer">
-    Your server creates a session and returns transfer instructions
+  <Step title="Add the payment function to Retell">
+    Configure a custom function in your Retell agent
   </Step>
-  <Step title="Handle webhook">
-    Maven notifies you when payment completes
+  <Step title="Update your agent prompt">
+    Tell your agent when to collect payment
   </Step>
 </Steps>
 
-## Custom Function Setup
+## 1. Add Payment Function to Retell
 
-In your Retell agent, add a custom function:
+In your Retell agent's **Custom Functions** section, add a new function:
 
 **Function Name:** `collect_payment`
 
-**Description:** Transfer the customer to collect credit card payment
+**Description:** `Transfer the customer to securely collect their credit card payment`
+
+**URL:** `https://api.trymaven.com/v1/integrations/retell/webhook`
+
+**Method:** POST
+
+**Headers:**
+```json
+{
+  "Authorization": "Bearer YOUR_MAVEN_API_KEY"
+}
+```
 
 **Parameters:**
 ```json
 {
-  "amount": {
-    "type": "number",
-    "description": "Payment amount in dollars"
+  "type": "object",
+  "properties": {
+    "amount": {
+      "type": "number",
+      "description": "Payment amount in dollars (e.g., 25.00)"
+    },
+    "description": {
+      "type": "string",
+      "description": "What the payment is for"
+    }
+  },
+  "required": ["amount"]
+}
+```
+
+<Warning>
+  Replace `YOUR_MAVEN_API_KEY` with your actual API key (e.g., `mvn_test_xxx` or `mvn_live_xxx`)
+</Warning>
+
+## 2. Update Your Agent Prompt
+
+Add this to your Retell agent's system prompt:
+
+```
+When the customer is ready to pay, use the collect_payment function with the amount.
+The customer will be transferred to enter their card details securely.
+After payment, they will be transferred back automatically.
+```
+
+## 3. Set Up Webhook (Optional)
+
+To receive payment notifications, configure a webhook in your [Maven Dashboard](https://app.trymaven.com/projects).
+
+Maven will POST to your webhook URL:
+
+```json
+{
+  "event": "payment.success",
+  "session_id": "abc-123",
+  "amount": 2500,
+  "currency": "USD",
+  "card_brand": "visa",
+  "card_last4": "4242"
+}
+```
+
+## That's It!
+
+Your Retell agent can now collect payments. When the agent calls `collect_payment`:
+
+1. Maven creates a payment session
+2. Retell transfers the call to Maven's secure IVR
+3. Customer enters card via phone keypad
+4. Maven charges the card and sends you a webhook
+5. Call transfers back to your agent (optional)
+
+---
+
+## Testing
+
+1. Use a `mvn_test_` API key (test mode)
+2. When prompted for card, enter: `4242 4242 4242 4242`
+3. Any future expiry date, any 3-digit CVV
+
+<Info>
+  Test mode simulates charges. No real money moves.
+</Info>
+
+---
+
+## Advanced: Transfer Back
+
+To transfer the customer back to your Retell agent after payment, add a `callback` parameter:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "amount": { "type": "number" },
+    "callback": {
+      "type": "string",
+      "description": "Phone number to transfer back to after payment"
+    }
   }
 }
 ```
 
-## Server Endpoint
+Your agent would call it like:
+```
+collect_payment(amount: 25.00, callback: "+14155551234")
+```
+
+---
+
+## Advanced: Custom Server
+
+If you need more control (custom logic, database lookups, etc.), you can run your own server:
 
 ```javascript
-// POST /retell/functions
-app.post('/retell/functions', async (req, res) => {
-  const { name, args, call } = req.body;
+// Your server handles the Retell function call
+app.post('/retell/payment', async (req, res) => {
+  const { args, call } = req.body;
+  const caller = call.from_number;
 
-  if (name === 'collect_payment') {
-    // Create Maven session
-    const session = await fetch('https://api.trymaven.com/v1/sessions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.MAVEN_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        project: 'my-project',
-        caller: call.from_number,
-        amount: args.amount * 100,
-        currency: 'USD',
-        mode: 'charge',
-        callback: process.env.RETELL_PHONE_NUMBER
-      })
-    });
+  // Your custom logic here...
+  const customerId = await lookupCustomer(caller);
 
-    const { phone_number } = await session.json();
+  // Create Maven session
+  const session = await fetch('https://api.trymaven.com/v1/sessions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.MAVEN_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      project: 'my-project',
+      caller: caller,
+      amount: args.amount * 100,
+      customer_id: customerId,
+      metadata: { source: 'retell' }
+    })
+  });
 
-    return res.json({
-      response: `Transferring you to our secure payment line.`,
-      transfer_to: phone_number
-    });
-  }
+  const { phone_number } = await session.json();
+
+  return res.json({
+    response: 'Transferring to secure payment line.',
+    transfer_to: phone_number
+  });
 });
 ```
 
-## Testing
+---
 
-1. Use `mvn_test_` API key
-2. Test card: `4242 4242 4242 4242`
-3. Any future expiry, any CVV
+## Troubleshooting
 
-<Info>
-  Need help? Contact us at support@trymaven.com
-</Info>
+<AccordionGroup>
+  <Accordion title="Function not working">
+    Check that your Maven API key is correct in the function headers. Make sure it starts with `mvn_test_` or `mvn_live_`.
+  </Accordion>
+
+  <Accordion title="Call not transferring">
+    Retell should automatically handle the `transfer_to` field in the response. Check the Retell logs to see if the function response is being received.
+  </Accordion>
+
+  <Accordion title="Payment failing">
+    In test mode, use card `4242 4242 4242 4242`. Check your Maven dashboard for session status and error details.
+  </Accordion>
+</AccordionGroup>

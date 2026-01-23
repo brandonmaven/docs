@@ -5,30 +5,49 @@ description: "Collect payments with Twilio voice"
 
 # Twilio Integration
 
-This guide shows how to integrate Maven with Twilio Voice (TwiML or Studio).
+Integrate Maven with Twilio Voice using TwiML or Studio.
+
+<Info>
+  Twilio integrations require a server to generate TwiML responses. For a serverless experience, consider using a voice AI platform like [VAPI](/integrations/vapi), [Bland](/integrations/bland), or [Retell](/integrations/retell).
+</Info>
 
 ## Overview
 
 <Steps>
-  <Step title="Create session via API">
-    Call Maven API to create a payment session
+  <Step title="Get your Maven API key">
+    Go to [Dashboard → API Keys](https://app.trymaven.com/api-keys) and create a key
   </Step>
-  <Step title="Transfer with TwiML">
-    Use `<Dial>` to transfer to Maven's IVR
+  <Step title="Create a TwiML endpoint">
+    Build a server endpoint that creates Maven sessions
   </Step>
-  <Step title="Handle webhook">
-    Maven notifies you when payment completes
+  <Step title="Configure Twilio webhooks">
+    Point Twilio to your endpoint when payment is needed
   </Step>
 </Steps>
 
 ## TwiML Integration
 
-### Create Session Endpoint
+### 1. Create Session Endpoint
 
 ```javascript
+const express = require('express');
+const app = express();
+
+app.use(express.urlencoded({ extended: true }));
+
 // POST /twilio/collect-payment
 app.post('/twilio/collect-payment', async (req, res) => {
-  const { From, amount } = req.body;
+  const { From } = req.body;
+  const amount = parseFloat(req.query.amount || '0');
+
+  if (!amount || amount <= 0) {
+    res.type('text/xml');
+    return res.send(`
+      <Response>
+        <Say>I'm sorry, there was an error with the payment amount.</Say>
+      </Response>
+    `);
+  }
 
   // Create Maven session
   const session = await fetch('https://api.trymaven.com/v1/sessions', {
@@ -40,10 +59,10 @@ app.post('/twilio/collect-payment', async (req, res) => {
     body: JSON.stringify({
       project: 'my-project',
       caller: From,
-      amount: parseInt(amount) * 100,
+      amount: Math.round(amount * 100),  // Convert to cents
       currency: 'USD',
       mode: 'charge',
-      callback: process.env.TWILIO_PHONE_NUMBER
+      callback: process.env.TWILIO_PHONE_NUMBER  // Optional: transfer back
     })
   });
 
@@ -63,7 +82,7 @@ app.post('/twilio/collect-payment', async (req, res) => {
 });
 ```
 
-### Handle Transfer Complete
+### 2. Handle Transfer Complete
 
 ```javascript
 app.post('/twilio/transfer-complete', (req, res) => {
@@ -73,15 +92,22 @@ app.post('/twilio/transfer-complete', (req, res) => {
 
   if (DialCallStatus === 'completed') {
     res.send(`
+      <?xml version="1.0" encoding="UTF-8"?>
       <Response>
-        <Say>Thank you. Is there anything else I can help with?</Say>
+        <Say>Thank you for your payment. Is there anything else I can help with?</Say>
+        <Gather input="speech" timeout="5" action="/twilio/next-action">
+          <Say>Please say yes or no.</Say>
+        </Gather>
       </Response>
     `);
   } else {
     res.send(`
+      <?xml version="1.0" encoding="UTF-8"?>
       <Response>
-        <Say>I'm sorry, the transfer didn't complete. Let me try again.</Say>
-        <Redirect>/twilio/retry</Redirect>
+        <Say>I'm sorry, the payment didn't go through. Would you like to try again?</Say>
+        <Gather input="speech" timeout="5" action="/twilio/retry">
+          <Say>Please say yes or no.</Say>
+        </Gather>
       </Response>
     `);
   }
@@ -96,12 +122,72 @@ In Studio, use these widgets:
 2. **Connect Call To** - Transfer to the Maven phone number from response
 3. **Split Based On** - Handle completion status
 
+### Studio Flow Example
+
+```
+[Incoming Call]
+    ↓
+[Make HTTP Request]
+    URL: https://your-server.com/twilio/create-session
+    Method: POST
+    Body: {"amount": "{{widgets.get_amount.result}}", "from": "{{contact.channel.address}}"}
+    ↓
+[Connect Call To]
+    Number: {{widgets.create_session.parsed.phone_number}}
+    ↓
+[Split Based On]
+    Variable: {{widgets.connect_call.CallStatus}}
+    "completed" → [Say "Payment successful"]
+    "busy/failed/no-answer" → [Say "Payment failed"]
+```
+
+## Set Up Webhook (Optional)
+
+To receive payment notifications, configure a webhook in your [Maven Dashboard](https://app.trymaven.com/projects).
+
+Maven will POST to your webhook URL:
+
+```json
+{
+  "event": "payment.success",
+  "session_id": "abc-123",
+  "amount": 2500,
+  "currency": "USD",
+  "card_brand": "visa",
+  "card_last4": "4242"
+}
+```
+
+---
+
 ## Testing
 
-1. Use `mvn_test_` API key
-2. Test card: `4242 4242 4242 4242`
-3. Any future expiry, any CVV
+1. Use a `mvn_test_` API key (test mode)
+2. When prompted for card, enter: `4242 4242 4242 4242`
+3. Any future expiry date, any 3-digit CVV
 
 <Info>
-  Need help? Contact us at support@trymaven.com
+  Test mode simulates charges. No real money moves.
 </Info>
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="TwiML not working">
+    Make sure your endpoint returns `Content-Type: text/xml` and valid TwiML. Use Twilio's TwiML validator to debug.
+  </Accordion>
+
+  <Accordion title="Call not transferring">
+    Check that the Maven session was created successfully. Log the `phone_number` value to verify it's being returned correctly.
+  </Accordion>
+
+  <Accordion title="Payment failing">
+    In test mode, use card `4242 4242 4242 4242`. Check your Maven dashboard for session status and error details.
+  </Accordion>
+
+  <Accordion title="Dial status not received">
+    Make sure your `<Dial>` tag has an `action` attribute pointing to your status handler endpoint.
+  </Accordion>
+</AccordionGroup>

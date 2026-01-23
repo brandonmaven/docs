@@ -5,36 +5,124 @@ description: "Collect payments with Bland AI voice agents"
 
 # Bland AI Integration
 
-This guide shows how to integrate Maven with Bland AI to collect payments.
+Integrate Maven with Bland AI in minutes. No server required.
 
-## Overview
+## Quick Setup (5 minutes)
 
 <Steps>
-  <Step title="Create Maven session">
-    Your server creates a payment session via Maven API
+  <Step title="Get your Maven API key">
+    Go to [Dashboard → API Keys](https://app.trymaven.com/api-keys) and create a key
   </Step>
-  <Step title="Transfer via pathway">
-    Use Bland's transfer node to send customer to Maven
+  <Step title="Add the payment tool to Bland">
+    Configure a webhook tool in your Bland pathway
   </Step>
-  <Step title="Handle webhook">
-    Maven notifies you when payment completes
+  <Step title="Update your pathway">
+    Tell your agent when to collect payment
   </Step>
 </Steps>
 
-## Pathway Setup
+## 1. Add Payment Tool to Bland
 
-Add a transfer node in your Bland pathway:
+In your Bland pathway, add a **Webhook** node with this configuration:
 
-1. Create a **Custom Tool** node that calls your server to create a Maven session
-2. Add a **Transfer Call** node that transfers to the Maven phone number
-3. Configure your webhook endpoint to receive payment results
+**URL:** `https://api.trymaven.com/v1/integrations/bland/webhook`
 
-## Server Endpoint
+**Method:** POST
+
+**Headers:**
+```json
+{
+  "Authorization": "Bearer YOUR_MAVEN_API_KEY",
+  "Content-Type": "application/json"
+}
+```
+
+**Body:**
+```json
+{
+  "amount": "{{amount}}",
+  "from": "{{from}}",
+  "description": "{{description}}"
+}
+```
+
+<Warning>
+  Replace `YOUR_MAVEN_API_KEY` with your actual API key (e.g., `mvn_test_xxx` or `mvn_live_xxx`)
+</Warning>
+
+## 2. Configure the Transfer
+
+After your webhook node, add a **Transfer Call** node:
+
+- **Transfer To:** Use the `transfer_to` value from the webhook response
+- **Transfer Message:** "I'll transfer you now to securely enter your card details."
+
+## 3. Set Up Webhook (Optional)
+
+To receive payment notifications, configure a webhook in your [Maven Dashboard](https://app.trymaven.com/projects).
+
+Maven will POST to your webhook URL:
+
+```json
+{
+  "event": "payment.success",
+  "session_id": "abc-123",
+  "amount": 2500,
+  "currency": "USD",
+  "card_brand": "visa",
+  "card_last4": "4242"
+}
+```
+
+## That's It!
+
+Your Bland agent can now collect payments. When the agent triggers the webhook:
+
+1. Maven creates a payment session
+2. Bland transfers the call to Maven's secure IVR
+3. Customer enters card via phone keypad
+4. Maven charges the card and sends you a webhook
+5. Call transfers back to your agent (optional)
+
+---
+
+## Testing
+
+1. Use a `mvn_test_` API key (test mode)
+2. When prompted for card, enter: `4242 4242 4242 4242`
+3. Any future expiry date, any 3-digit CVV
+
+<Info>
+  Test mode simulates charges. No real money moves.
+</Info>
+
+---
+
+## Advanced: Transfer Back
+
+To transfer the customer back to your Bland agent after payment, add a `callback` parameter to the webhook body:
+
+```json
+{
+  "amount": "{{amount}}",
+  "from": "{{from}}",
+  "callback": "+14155551234"
+}
+```
+
+---
+
+## Advanced: Custom Server
+
+If you need more control (custom logic, database lookups, etc.), you can run your own server:
 
 ```javascript
-// POST /bland/collect-payment
-app.post('/bland/collect-payment', async (req, res) => {
+// Your server handles the Bland webhook
+app.post('/bland/payment', async (req, res) => {
   const { amount, from } = req.body;
+
+  // Your custom logic here...
+  const customerId = await lookupCustomer(from);
 
   // Create Maven session
   const session = await fetch('https://api.trymaven.com/v1/sessions', {
@@ -47,9 +135,8 @@ app.post('/bland/collect-payment', async (req, res) => {
       project: 'my-project',
       caller: from,
       amount: amount * 100,
-      currency: 'USD',
-      mode: 'charge',
-      callback: process.env.BLAND_PHONE_NUMBER
+      customer_id: customerId,
+      metadata: { source: 'bland' }
     })
   });
 
@@ -61,12 +148,20 @@ app.post('/bland/collect-payment', async (req, res) => {
 });
 ```
 
-## Testing
+---
 
-1. Use `mvn_test_` API key
-2. Test card: `4242 4242 4242 4242`
-3. Any future expiry, any CVV
+## Troubleshooting
 
-<Info>
-  Need help? Contact us at support@trymaven.com
-</Info>
+<AccordionGroup>
+  <Accordion title="Webhook not working">
+    Check that your Maven API key is correct in the headers. Make sure it starts with `mvn_test_` or `mvn_live_`.
+  </Accordion>
+
+  <Accordion title="Call not transferring">
+    Make sure your Transfer node is using the `transfer_to` value from the webhook response. Check your Bland logs for errors.
+  </Accordion>
+
+  <Accordion title="Payment failing">
+    In test mode, use card `4242 4242 4242 4242`. Check your Maven dashboard for session status and error details.
+  </Accordion>
+</AccordionGroup>

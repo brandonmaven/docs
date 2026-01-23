@@ -5,29 +5,46 @@ description: "Connect Maven to your voice AI platform"
 
 # Integrations
 
-Maven works with all major voice AI platforms. The integration pattern is the same:
+Maven works with all major voice AI platforms. Choose your platform below for a step-by-step guide.
 
-1. **Create a session** via Maven API when payment is needed
-2. **Transfer the call** to Maven's IVR number
-3. **Receive webhook** when payment completes
-4. **Resume conversation** with context (optional)
+## Serverless Integrations
 
-## Supported Platforms
+These platforms support direct integration with Maven's endpoints—no server required:
 
-<CardGroup cols={2}>
-  <Card title="VAPI" icon="microphone" href="/integrations/vapi">
-    Full guide with tool definitions
+<CardGroup cols={3}>
+  <Card title="VAPI" icon="robot" href="/integrations/vapi">
+    Tool-based integration. 5 minutes to set up.
   </Card>
   <Card title="Bland AI" icon="phone" href="/integrations/bland">
-    Pathway integration
+    Pathway webhook integration. 5 minutes to set up.
   </Card>
   <Card title="Retell" icon="headset" href="/integrations/retell">
-    Function calling setup
+    Custom function integration. 5 minutes to set up.
   </Card>
+</CardGroup>
+
+## Server-Based Integrations
+
+These platforms require a server to handle responses:
+
+<CardGroup cols={2}>
   <Card title="Twilio" icon="message" href="/integrations/twilio">
     TwiML and Studio flows
   </Card>
 </CardGroup>
+
+---
+
+## How It Works
+
+1. **Customer is ready to pay** → Your voice agent triggers the payment tool/function
+2. **Maven creates a session** → Returns a secure IVR phone number
+3. **Call is transferred** → Customer enters card details via phone keypad
+4. **Payment is processed** → Maven charges the card through Stripe
+5. **Webhook is sent** → You receive payment confirmation
+6. **Call transfers back** → Customer resumes conversation (optional)
+
+---
 
 ## Transfer Back (Optional)
 
@@ -38,9 +55,11 @@ After payment, Maven can transfer the customer back to your agent. Pass the `cal
   "project": "my-project",
   "caller": "+14155551234",
   "amount": 2500,
-  "callback": "+14155559999"  // Your agent's number
+  "callback": "+14155559999"
 }
 ```
+
+---
 
 ## Context Endpoint
 
@@ -55,7 +74,7 @@ Content-Type: application/json
 }
 ```
 
-**Response (if payment found):**
+**Response (if payment found within 5 minutes):**
 ```json
 {
   "found": true,
@@ -68,3 +87,14 @@ Content-Type: application/json
 ```
 
 This lets your agent say "Great, your payment went through!" instead of starting over.
+
+---
+
+## API Keys
+
+All integrations require a Maven API key:
+
+- **Test mode:** `mvn_test_xxx` — simulates charges, no real money moves
+- **Live mode:** `mvn_live_xxx` — processes real charges
+
+Get your API key from the [Maven Dashboard](https://app.trymaven.com/api-keys).
