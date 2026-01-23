@@ -1,62 +1,84 @@
 {
-  "$schema": "https://mintlify.com/schema.json",
+  "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
   "name": "Maven",
-  "logo": {
-    "dark": "https://app.trymaven.com/logo.png",
-    "light": "https://app.trymaven.com/logo.png"
-  },
   "colors": {
     "primary": "#6366F1",
     "light": "#818CF8",
     "dark": "#4F46E5"
   },
-  "topbarLinks": [
-    {
-      "name": "Dashboard",
-      "url": "https://app.trymaven.com"
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "get-started/introduction",
+              "get-started/quickstart",
+              "get-started/authentication"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "integrations/overview",
+              "integrations/vapi",
+              "integrations/bland",
+              "integrations/retell",
+              "integrations/twilio"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "API Reference",
+            "pages": [
+              "api-reference/overview",
+              "api-reference/sessions",
+              "api-reference/webhooks"
+            ]
+          }
+        ]
+      }
+    ],
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Dashboard",
+          "href": "https://app.trymaven.com",
+          "icon": "browser"
+        }
+      ]
     }
-  ],
-  "topbarCtaButton": {
-    "name": "Get Started",
-    "url": "https://app.trymaven.com"
   },
-  "navbar": [
-    {
-      "label": "API Reference",
-      "path": "api-reference"
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:support@trymaven.com"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://app.trymaven.com"
     }
-  ],
-  "sidebar": [
-    {
-      "group": "Get Started",
-      "pages": [
-        "get-started/introduction",
-        "get-started/quickstart",
-        "get-started/authentication"
-      ]
-    },
-    {
-      "group": "Integrations",
-      "pages": [
-        "integrations/overview",
-        "integrations/vapi",
-        "integrations/bland",
-        "integrations/retell",
-        "integrations/twilio"
-      ]
-    },
-    {
-      "group": "API Reference",
-      "pages": [
-        "api-reference/overview",
-        "api-reference/sessions",
-        "api-reference/webhooks"
-      ]
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/trymaven",
+      "github": "https://github.com/brandonmaven",
+      "linkedin": "https://linkedin.com/company/trymaven"
     }
-  ],
-  "footerSocials": {
-    "twitter": "https://twitter.com/trymaven",
-    "linkedin": "https://linkedin.com/company/trymaven"
   }
 }
