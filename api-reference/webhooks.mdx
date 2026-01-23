@@ -1,0 +1,163 @@
+---
+title: Webhooks
+description: "Receive real-time payment notifications"
+---
+
+# Webhooks
+
+Maven sends webhooks to notify you of payment events in real-time.
+
+## Setup
+
+Configure your webhook URL in [Dashboard → Projects → Webhooks](https://app.trymaven.com/projects).
+
+## Events
+
+| Event | Description |
+|-------|-------------|
+| `payment.success` | Payment completed successfully |
+| `payment.failed` | Payment failed |
+| `payment.tokenized` | Card saved (tokenize mode) |
+
+## Webhook Payload
+
+All webhooks include:
+
+```json
+{
+  "event": "payment.success",
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2024-01-15T10:35:00Z",
+  "data": { ... }
+}
+```
+
+### payment.success
+
+Sent when a payment is successfully charged.
+
+```json
+{
+  "event": "payment.success",
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2024-01-15T10:35:00Z",
+  "data": {
+    "amount": 2500,
+    "currency": "USD",
+    "card_brand": "visa",
+    "card_last4": "4242",
+    "charge_id": "ch_xxx",
+    "receipt_url": "https://pay.stripe.com/receipts/...",
+    "customer_id": "your-customer-123",
+    "metadata": {
+      "order_id": "ORD-123"
+    }
+  }
+}
+```
+
+### payment.failed
+
+Sent when a payment fails.
+
+```json
+{
+  "event": "payment.failed",
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2024-01-15T10:35:00Z",
+  "data": {
+    "error_code": "card_declined",
+    "error_message": "Your card was declined",
+    "customer_id": "your-customer-123"
+  }
+}
+```
+
+### payment.tokenized
+
+Sent when a card is saved (tokenize mode).
+
+```json
+{
+  "event": "payment.tokenized",
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2024-01-15T10:35:00Z",
+  "data": {
+    "token_id": "pm_xxx",
+    "card_brand": "visa",
+    "card_last4": "4242",
+    "customer_id": "cus_xxx"
+  }
+}
+```
+
+## Verifying Webhooks
+
+Webhooks include a signature header for verification:
+
+```
+X-Maven-Signature: sha256=xxxx
+```
+
+Verify using your webhook secret (from dashboard):
+
+```javascript
+const crypto = require('crypto');
+
+function verifyWebhook(payload, signature, secret) {
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+
+  return `sha256=${expected}` === signature;
+}
+
+// In your webhook handler
+app.post('/webhook', (req, res) => {
+  const signature = req.headers['x-maven-signature'];
+  const isValid = verifyWebhook(
+    JSON.stringify(req.body),
+    signature,
+    process.env.MAVEN_WEBHOOK_SECRET
+  );
+
+  if (!isValid) {
+    return res.status(401).send('Invalid signature');
+  }
+
+  // Process webhook
+  const { event, data } = req.body;
+  // ...
+
+  res.status(200).send('OK');
+});
+```
+
+## Retry Policy
+
+Failed webhooks are retried:
+
+- 1st retry: 1 minute
+- 2nd retry: 5 minutes
+- 3rd retry: 30 minutes
+- 4th retry: 2 hours
+- 5th retry: 24 hours
+
+After 5 failed attempts, the webhook is marked as failed.
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Return 200 quickly">
+    Return a 200 response immediately, then process the webhook asynchronously. Webhooks timeout after 30 seconds.
+  </Accordion>
+
+  <Accordion title="Handle duplicates">
+    Use `session_id` to deduplicate. The same event may be sent multiple times.
+  </Accordion>
+
+  <Accordion title="Verify signatures">
+    Always verify the webhook signature in production to prevent spoofing.
+  </Accordion>
+</AccordionGroup>

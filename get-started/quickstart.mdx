@@ -1,0 +1,155 @@
+---
+title: Quick Start
+description: "Get payments working in 5 minutes"
+---
+
+# Quick Start
+
+This guide will get you collecting payments in minutes.
+
+## Prerequisites
+
+- A Maven account ([sign up here](https://app.trymaven.com))
+- A Stripe account connected via the dashboard
+- A voice agent (VAPI, Bland, Retell, or Twilio)
+
+## Step 1: Get your API Key
+
+1. Go to [Dashboard → API Keys](https://app.trymaven.com/api-keys)
+2. Click **Create API Key**
+3. Copy the key (starts with `mvn_test_` or `mvn_live_`)
+
+<Warning>
+  Keep your API key secret. Never expose it in client-side code.
+</Warning>
+
+## Step 2: Connect Stripe
+
+1. Go to [Dashboard → Settings](https://app.trymaven.com/settings)
+2. Click **Connect Stripe**
+3. Complete the Stripe OAuth flow
+
+Payments will go directly to your connected Stripe account.
+
+## Step 3: Create a Payment Session
+
+When your voice agent needs to collect payment, create a session:
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.trymaven.com/v1/sessions \
+  -H "Authorization: Bearer mvn_test_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project": "my-project",
+    "caller": "+14155551234",
+    "amount": 2500,
+    "currency": "USD",
+    "mode": "charge"
+  }'
+```
+
+```javascript Node.js
+const response = await fetch('https://api.trymaven.com/v1/sessions', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer mvn_test_xxx',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    project: 'my-project',
+    caller: '+14155551234',
+    amount: 2500,  // $25.00 in cents
+    currency: 'USD',
+    mode: 'charge'
+  })
+});
+
+const session = await response.json();
+console.log(session.phone_number); // Number for customer to call
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'https://api.trymaven.com/v1/sessions',
+    headers={
+        'Authorization': 'Bearer mvn_test_xxx',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'project': 'my-project',
+        'caller': '+14155551234',
+        'amount': 2500,  # $25.00 in cents
+        'currency': 'USD',
+        'mode': 'charge'
+    }
+)
+
+session = response.json()
+print(session['phone_number'])  # Number for customer to call
+```
+
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "created",
+  "phone_number": "+14085551234",
+  "created_at": "2024-01-15T10:30:00Z"
+}
+```
+
+## Step 4: Transfer the Call
+
+Have your voice agent transfer the customer to the `phone_number` returned.
+
+<Tabs>
+  <Tab title="VAPI">
+    Use VAPI's `transferCall` function to transfer to the Maven number.
+
+    See [VAPI Integration](/integrations/vapi) for details.
+  </Tab>
+  <Tab title="Bland">
+    Use Bland's pathway transfer node.
+
+    See [Bland Integration](/integrations/bland) for details.
+  </Tab>
+  <Tab title="Retell">
+    Use Retell's transfer function.
+
+    See [Retell Integration](/integrations/retell) for details.
+  </Tab>
+</Tabs>
+
+## Step 5: Handle the Webhook
+
+Maven sends a webhook when payment completes. Set your webhook URL in the dashboard.
+
+```json
+{
+  "event": "payment.success",
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "amount": 2500,
+  "currency": "USD",
+  "card_brand": "visa",
+  "card_last4": "4242"
+}
+```
+
+See [Webhooks](/api-reference/webhooks) for all event types.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/get-started/authentication">
+    Learn about API keys and security
+  </Card>
+  <Card title="VAPI Integration" icon="microphone" href="/integrations/vapi">
+    Set up VAPI with Maven
+  </Card>
+</CardGroup>

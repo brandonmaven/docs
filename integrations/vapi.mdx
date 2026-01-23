@@ -1,0 +1,186 @@
+---
+title: VAPI Integration
+description: "Collect payments with VAPI voice agents"
+---
+
+# VAPI Integration
+
+This guide shows how to integrate Maven with your VAPI assistant to collect payments.
+
+## Overview
+
+<Steps>
+  <Step title="Add Maven tool to VAPI">
+    Configure a custom tool that calls Maven's API
+  </Step>
+  <Step title="Create session before transfer">
+    Your server creates a payment session
+  </Step>
+  <Step title="Transfer to Maven">
+    VAPI transfers the call to Maven's IVR
+  </Step>
+  <Step title="Handle webhook">
+    Maven notifies you when payment completes
+  </Step>
+</Steps>
+
+## Option 1: Server URL Integration (Recommended)
+
+### 1. Set up your server endpoint
+
+Create an endpoint that VAPI calls when your assistant needs to collect payment:
+
+```javascript
+// POST /vapi/collect-payment
+app.post('/vapi/collect-payment', async (req, res) => {
+  const { message } = req.body;
+
+  // Extract amount and caller from VAPI context
+  const amount = message.toolCalls[0].function.arguments.amount;
+  const caller = message.call.customer.number;
+
+  // Create Maven session
+  const session = await fetch('https://api.trymaven.com/v1/sessions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.MAVEN_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      project: 'my-project',
+      caller: caller,
+      amount: amount * 100,  // Convert to cents
+      currency: 'USD',
+      mode: 'charge',
+      callback: process.env.VAPI_PHONE_NUMBER  // Transfer back after payment
+    })
+  });
+
+  const { phone_number } = await session.json();
+
+  // Return transfer instruction to VAPI
+  return res.json({
+    results: [{
+      toolCallId: message.toolCalls[0].id,
+      result: `Transferring to payment line at ${phone_number}`
+    }],
+    // Transfer the call
+    destination: {
+      type: 'number',
+      number: phone_number,
+      message: 'I\'ll transfer you now to securely enter your card details.'
+    }
+  });
+});
+```
+
+### 2. Configure VAPI Tool
+
+In your VAPI assistant, add this tool:
+
+```json
+{
+  "type": "function",
+  "function": {
+    "name": "collect_payment",
+    "description": "Transfer the customer to collect their credit card payment securely",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number",
+          "description": "Payment amount in dollars"
+        }
+      },
+      "required": ["amount"]
+    }
+  },
+  "server": {
+    "url": "https://your-server.com/vapi/collect-payment"
+  }
+}
+```
+
+### 3. Update your assistant prompt
+
+Add instructions to your VAPI assistant:
+
+```
+When the customer is ready to pay, use the collect_payment tool with the amount.
+The customer will be transferred to enter their card details securely.
+```
+
+## Option 2: VAPI Webhook + Direct Transfer
+
+If you prefer handling everything in webhooks:
+
+### 1. Handle `assistant-request` webhook
+
+```javascript
+app.post('/vapi/webhook', async (req, res) => {
+  const { message } = req.body;
+
+  if (message.type === 'tool-calls') {
+    const toolCall = message.toolCalls.find(t => t.function.name === 'collect_payment');
+
+    if (toolCall) {
+      // Create Maven session and return transfer
+      // ... same as above
+    }
+  }
+});
+```
+
+## Handling Transfer Back
+
+When the call returns to VAPI after payment, check the context:
+
+```javascript
+app.post('/vapi/assistant-request', async (req, res) => {
+  const caller = req.body.call?.customer?.number;
+
+  // Check if this caller just paid
+  const context = await fetch('https://api.trymaven.com/voice/context', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ caller })
+  });
+
+  const { found, amount } = await context.json();
+
+  if (found) {
+    // Inject context into assistant
+    return res.json({
+      assistant: {
+        firstMessage: `Welcome back! I can see your payment of $${amount/100} was successful. How else can I help you?`
+      }
+    });
+  }
+});
+```
+
+## Testing
+
+1. Create a test session with `mvn_test_` API key
+2. Use Stripe test card: `4242 4242 4242 4242`
+3. Any future expiry, any 3-digit CVV
+
+<Info>
+  Test mode charges are simulated. No real money moves.
+</Info>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Call not transferring">
+    Make sure your VAPI tool returns a `destination` object with the Maven phone number.
+  </Accordion>
+
+  <Accordion title="Session not found">
+    The `caller` phone number must match exactly (E.164 format: +14155551234).
+  </Accordion>
+
+  <Accordion title="Payment context not returning">
+    Context is only available for 5 minutes after payment. Check the caller number matches.
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,70 @@
+---
+title: Integrations Overview
+description: "Connect Maven to your voice AI platform"
+---
+
+# Integrations
+
+Maven works with all major voice AI platforms. The integration pattern is the same:
+
+1. **Create a session** via Maven API when payment is needed
+2. **Transfer the call** to Maven's IVR number
+3. **Receive webhook** when payment completes
+4. **Resume conversation** with context (optional)
+
+## Supported Platforms
+
+<CardGroup cols={2}>
+  <Card title="VAPI" icon="microphone" href="/integrations/vapi">
+    Full guide with tool definitions
+  </Card>
+  <Card title="Bland AI" icon="phone" href="/integrations/bland">
+    Pathway integration
+  </Card>
+  <Card title="Retell" icon="headset" href="/integrations/retell">
+    Function calling setup
+  </Card>
+  <Card title="Twilio" icon="message" href="/integrations/twilio">
+    TwiML and Studio flows
+  </Card>
+</CardGroup>
+
+## Transfer Back (Optional)
+
+After payment, Maven can transfer the customer back to your agent. Pass the `callback` parameter when creating a session:
+
+```json
+{
+  "project": "my-project",
+  "caller": "+14155551234",
+  "amount": 2500,
+  "callback": "+14155559999"  // Your agent's number
+}
+```
+
+## Context Endpoint
+
+When a call is transferred back, your voice agent can check if the customer just completed a payment:
+
+```bash
+POST https://api.trymaven.com/voice/context
+Content-Type: application/json
+
+{
+  "caller": "+14155551234"
+}
+```
+
+**Response (if payment found):**
+```json
+{
+  "found": true,
+  "session_id": "abc-123",
+  "status": "paid",
+  "amount": 2500,
+  "currency": "USD",
+  "message": "Customer just completed payment successfully."
+}
+```
+
+This lets your agent say "Great, your payment went through!" instead of starting over.

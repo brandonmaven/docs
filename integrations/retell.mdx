@@ -1,0 +1,85 @@
+---
+title: Retell Integration
+description: "Collect payments with Retell voice agents"
+---
+
+# Retell Integration
+
+This guide shows how to integrate Maven with Retell to collect payments.
+
+## Overview
+
+<Steps>
+  <Step title="Add custom function">
+    Configure a function in Retell that calls Maven
+  </Step>
+  <Step title="Create session & transfer">
+    Your server creates a session and returns transfer instructions
+  </Step>
+  <Step title="Handle webhook">
+    Maven notifies you when payment completes
+  </Step>
+</Steps>
+
+## Custom Function Setup
+
+In your Retell agent, add a custom function:
+
+**Function Name:** `collect_payment`
+
+**Description:** Transfer the customer to collect credit card payment
+
+**Parameters:**
+```json
+{
+  "amount": {
+    "type": "number",
+    "description": "Payment amount in dollars"
+  }
+}
+```
+
+## Server Endpoint
+
+```javascript
+// POST /retell/functions
+app.post('/retell/functions', async (req, res) => {
+  const { name, args, call } = req.body;
+
+  if (name === 'collect_payment') {
+    // Create Maven session
+    const session = await fetch('https://api.trymaven.com/v1/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.MAVEN_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        project: 'my-project',
+        caller: call.from_number,
+        amount: args.amount * 100,
+        currency: 'USD',
+        mode: 'charge',
+        callback: process.env.RETELL_PHONE_NUMBER
+      })
+    });
+
+    const { phone_number } = await session.json();
+
+    return res.json({
+      response: `Transferring you to our secure payment line.`,
+      transfer_to: phone_number
+    });
+  }
+});
+```
+
+## Testing
+
+1. Use `mvn_test_` API key
+2. Test card: `4242 4242 4242 4242`
+3. Any future expiry, any CVV
+
+<Info>
+  Need help? Contact us at support@trymaven.com
+</Info>

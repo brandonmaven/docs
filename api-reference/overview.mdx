@@ -1,0 +1,73 @@
+---
+title: API Overview
+description: "Maven REST API reference"
+---
+
+# API Overview
+
+The Maven API is organized around REST. It accepts JSON request bodies, returns JSON responses, and uses standard HTTP response codes.
+
+## Base URL
+
+```
+https://api.trymaven.com
+```
+
+## Authentication
+
+Include your API key in the `Authorization` header:
+
+```bash
+Authorization: Bearer mvn_test_xxxxxxxxxxxxx
+```
+
+## Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/v1/sessions` | Create a payment session |
+| `GET` | `/v1/sessions/:id` | Get session details |
+| `DELETE` | `/v1/sessions/:id` | Cancel a session |
+| `POST` | `/voice/context` | Check caller payment context |
+
+## Response Format
+
+All responses are JSON with this structure:
+
+**Success:**
+```json
+{
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "created",
+  ...
+}
+```
+
+**Error:**
+```json
+{
+  "detail": "Invalid API key"
+}
+```
+
+## HTTP Status Codes
+
+| Code | Description |
+|------|-------------|
+| `200` | Success |
+| `201` | Created |
+| `400` | Bad request (invalid parameters) |
+| `401` | Unauthorized (invalid API key) |
+| `404` | Not found |
+| `429` | Rate limit exceeded |
+| `500` | Server error |
+
+## Idempotency
+
+To safely retry requests, include an `Idempotency-Key` header:
+
+```bash
+Idempotency-Key: unique-request-id-123
+```
+
+The same key within 24 hours will return the cached response.

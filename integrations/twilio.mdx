@@ -1,0 +1,107 @@
+---
+title: Twilio Integration
+description: "Collect payments with Twilio voice"
+---
+
+# Twilio Integration
+
+This guide shows how to integrate Maven with Twilio Voice (TwiML or Studio).
+
+## Overview
+
+<Steps>
+  <Step title="Create session via API">
+    Call Maven API to create a payment session
+  </Step>
+  <Step title="Transfer with TwiML">
+    Use `<Dial>` to transfer to Maven's IVR
+  </Step>
+  <Step title="Handle webhook">
+    Maven notifies you when payment completes
+  </Step>
+</Steps>
+
+## TwiML Integration
+
+### Create Session Endpoint
+
+```javascript
+// POST /twilio/collect-payment
+app.post('/twilio/collect-payment', async (req, res) => {
+  const { From, amount } = req.body;
+
+  // Create Maven session
+  const session = await fetch('https://api.trymaven.com/v1/sessions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.MAVEN_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      project: 'my-project',
+      caller: From,
+      amount: parseInt(amount) * 100,
+      currency: 'USD',
+      mode: 'charge',
+      callback: process.env.TWILIO_PHONE_NUMBER
+    })
+  });
+
+  const { phone_number } = await session.json();
+
+  // Return TwiML to transfer
+  res.type('text/xml');
+  res.send(`
+    <?xml version="1.0" encoding="UTF-8"?>
+    <Response>
+      <Say>I'll transfer you now to enter your card details.</Say>
+      <Dial action="/twilio/transfer-complete">
+        <Number>${phone_number}</Number>
+      </Dial>
+    </Response>
+  `);
+});
+```
+
+### Handle Transfer Complete
+
+```javascript
+app.post('/twilio/transfer-complete', (req, res) => {
+  const { DialCallStatus } = req.body;
+
+  res.type('text/xml');
+
+  if (DialCallStatus === 'completed') {
+    res.send(`
+      <Response>
+        <Say>Thank you. Is there anything else I can help with?</Say>
+      </Response>
+    `);
+  } else {
+    res.send(`
+      <Response>
+        <Say>I'm sorry, the transfer didn't complete. Let me try again.</Say>
+        <Redirect>/twilio/retry</Redirect>
+      </Response>
+    `);
+  }
+});
+```
+
+## Twilio Studio
+
+In Studio, use these widgets:
+
+1. **Make HTTP Request** - Call your server to create Maven session
+2. **Connect Call To** - Transfer to the Maven phone number from response
+3. **Split Based On** - Handle completion status
+
+## Testing
+
+1. Use `mvn_test_` API key
+2. Test card: `4242 4242 4242 4242`
+3. Any future expiry, any CVV
+
+<Info>
+  Need help? Contact us at support@trymaven.com
+</Info>

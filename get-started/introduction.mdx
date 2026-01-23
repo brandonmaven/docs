@@ -1,0 +1,59 @@
+---
+title: Introduction
+description: "Collect payments over the phone with AI voice agents"
+---
+
+# Welcome to Maven
+
+Maven enables AI voice agents to collect payments securely over the phone. We handle PCI compliance so you don't have to.
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/get-started/quickstart">
+    Get up and running in 5 minutes
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/overview">
+    Explore the full API
+  </Card>
+</CardGroup>
+
+## How it works
+
+<Steps>
+  <Step title="Create a session">
+    Call our API with the payment amount and caller's phone number
+  </Step>
+  <Step title="Transfer the call">
+    Your voice agent transfers the customer to our IVR
+  </Step>
+  <Step title="We collect payment">
+    Maven securely collects card details via DTMF (keypad tones)
+  </Step>
+  <Step title="Get notified">
+    We send a webhook with the result and transfer the call back
+  </Step>
+</Steps>
+
+## Supported Platforms
+
+<CardGroup cols={4}>
+  <Card title="VAPI" icon="microphone" href="/integrations/vapi" />
+  <Card title="Bland AI" icon="phone" href="/integrations/bland" />
+  <Card title="Retell" icon="headset" href="/integrations/retell" />
+  <Card title="Twilio" icon="message" href="/integrations/twilio" />
+</CardGroup>
+
+## Payment Processors
+
+| Processor | Status |
+|-----------|--------|
+| Stripe | Available |
+| Authorize.Net | Coming Soon |
+| Adyen | Coming Soon |
+
+## Why Maven?
+
+- **PCI Compliant** - Card data never touches your servers (SAQ A)
+- **Natural Voice** - ElevenLabs TTS for human-like prompts
+- **Transfer Back** - Return customers to your agent after payment
+- **Webhooks** - Real-time notifications for payment events
+- **Stripe Connect** - Funds go directly to your Stripe account
