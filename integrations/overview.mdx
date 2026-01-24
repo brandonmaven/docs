@@ -58,6 +58,45 @@ After payment, Maven can transfer the customer back to your agent. Pass the `cal
 
 ---
 
+## Payment Modes
+
+| Mode | Description |
+|------|-------------|
+| `charge` | Charge the card immediately (default) |
+| `tokenize` | Save card for later without charging |
+
+---
+
+## Amount Format
+
+<Note>
+**VAPI tool:** Accepts dollars (e.g., `25.00` for $25)
+
+**Direct API:** Uses cents (e.g., `2500` for $25)
+</Note>
+
+---
+
+## Session Lifecycle
+
+- Sessions expire after **10 minutes** if not completed
+- Only one active session per caller (new sessions cancel previous ones)
+- Statuses: `created` → `collecting` → `payment-success` / `payment-failed`
+
+---
+
+## Testing
+
+1. Use a `mvn_test_` API key (test mode)
+2. Test card: `4242 4242 4242 4242`
+3. Any future expiry date, any 3-digit CVV
+
+<Info>
+Test mode simulates charges. No real money moves.
+</Info>
+
+---
+
 ## API Keys
 
 All integrations require a Maven API key:
