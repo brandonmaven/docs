@@ -1,6 +1,6 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "venus",
+  "theme": "palm",
   "name": "Maven",
   "colors": {
     "primary": "#8B5CF6",
