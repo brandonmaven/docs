@@ -1,13 +1,13 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
+  "theme": "venus",
   "name": "Maven",
   "colors": {
-    "primary": "#6366F1",
-    "light": "#818CF8",
-    "dark": "#4F46E5"
+    "primary": "#8B5CF6",
+    "light": "#A78BFA",
+    "dark": "#7C3AED"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/favicon.ico",
   "navigation": {
     "tabs": [
       {
@@ -52,13 +52,19 @@
           "anchor": "Dashboard",
           "href": "https://app.trymaven.com",
           "icon": "browser"
+        },
+        {
+          "anchor": "API Status",
+          "href": "https://status.trymaven.com",
+          "icon": "signal"
         }
       ]
     }
   },
   "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "light": "/logo/maven.png",
+    "dark": "/logo/maven.png",
+    "href": "https://trymaven.com"
   },
   "navbar": {
     "links": [
@@ -69,7 +75,7 @@
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
+      "label": "Get Started",
       "href": "https://app.trymaven.com"
     }
   },
@@ -79,5 +85,17 @@
       "github": "https://github.com/brandonmaven",
       "linkedin": "https://linkedin.com/company/trymaven"
     }
+  },
+  "metadata": {
+    "og:site_name": "Maven Docs",
+    "og:description": "Collect payments over the phone with AI voice agents",
+    "twitter:site": "@trymaven"
+  },
+  "seo": {
+    "indexHiddenPages": false
+  },
+  "feedback": {
+    "thumbsRating": true,
+    "suggestEdit": true
   }
 }
