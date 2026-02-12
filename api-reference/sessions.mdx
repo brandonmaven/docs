@@ -31,6 +31,10 @@ Create a new payment session.
   Payment mode: `charge` (immediate payment) or `tokenize` (save card for later)
 </ParamField>
 
+<ParamField body="gateway" type="string" default="stripe">
+  Payment gateway to process the payment. Currently supported: `stripe`. More gateways coming soon.
+</ParamField>
+
 <ParamField body="channel" type="string" default="voice">
   Payment channel:
   - `voice` — Customer calls an IVR number and enters card by phone
@@ -178,6 +182,7 @@ Retrieve details for a specific session.
   "currency": "USD",
   "description": "Order #12345",
   "mode": "charge",
+  "gateway": "stripe",
   "channel": "voice",
   "callback": "+18005551234",
   "metadata": {"order_id": "12345"},
