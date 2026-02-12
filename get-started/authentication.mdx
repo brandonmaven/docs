@@ -57,18 +57,10 @@ Authorization: Bearer mvn_test_xxxxxxxxxxxxx
   </Accordion>
 </AccordionGroup>
 
-## Rate Limits
+## Organizations
 
-| Plan | Requests per minute |
-|------|---------------------|
-| Free | 60 |
-| Pro | 600 |
-| Enterprise | Unlimited |
+Maven uses organizations to group projects, API keys, and team members. When you sign up, an organization is created for you automatically.
 
-Rate limit headers are included in responses:
-
-```
-X-RateLimit-Limit: 60
-X-RateLimit-Remaining: 45
-X-RateLimit-Reset: 1704067200
-```
+- **Projects** belong to an organization
+- **API keys** are scoped to an organization
+- **Team members** can be invited via the dashboard

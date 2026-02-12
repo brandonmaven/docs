@@ -20,15 +20,6 @@
               "get-started/quickstart",
               "get-started/authentication"
             ]
-          },
-          {
-            "group": "Integrations",
-            "pages": [
-              "integrations/overview",
-              "integrations/vapi",
-              "integrations/twilio",
-              "integrations/livekit"
-            ]
           }
         ]
       },

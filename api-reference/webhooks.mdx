@@ -5,81 +5,66 @@ description: "Receive real-time payment notifications"
 
 # Webhooks
 
-Maven sends webhooks to notify you of payment events in real-time.
+Maven sends webhooks to notify your server when payment events occur. Configure your webhook URL in the app settings in the dashboard.
 
-## Setup
+## Configuration
 
-Configure your webhook URL in [Dashboard → Projects](https://app.trymaven.com/projects).
+1. Go to your app settings in the dashboard
+2. Enter your webhook URL
+3. Copy the webhook secret for signature verification
 
-## Events
+## Event Types
 
 | Event | Description |
 |-------|-------------|
 | `payment.success` | Payment completed successfully |
 | `payment.failed` | Payment failed |
-| `payment.tokenized` | Card saved (tokenize mode) |
+| `payment.tokenized` | Card saved for later use (tokenize mode) |
+| `session.status_changed` | Session status transition |
 
-## Headers
+## Payment Success
 
-All webhooks include these headers:
-
-| Header | Description |
-|--------|-------------|
-| `X-Maven-Event` | Event type (e.g., `payment.success`) |
-| `X-Maven-Signature` | HMAC-SHA256 signature (if webhook secret configured) |
-| `X-Maven-Timestamp` | Unix timestamp |
-
-## Webhook Payloads
-
-### payment.success
-
-Sent when a payment is successfully charged.
+Sent when a payment (charge mode) completes successfully.
 
 ```json
 {
   "event_type": "payment.success",
   "session_id": "550e8400-e29b-41d4-a716-446655440000",
-  "timestamp": "2024-01-15T10:35:00Z",
+  "timestamp": "2026-02-11T10:35:00Z",
   "caller_phone": "+14155551234",
   "amount_cents": 2500,
   "currency": "USD",
-  "description": "Monthly subscription",
+  "description": "Order #12345",
   "status": "payment-success",
   "charge_id": "ch_xxx",
   "card_brand": "visa",
   "card_last4": "4242",
   "receipt_url": "https://pay.stripe.com/receipts/...",
-  "customer_id": "your-customer-123",
-  "customer_name": "John Doe",
-  "customer_email": "john@example.com",
-  "metadata": {
-    "order_id": "ORD-123"
-  }
+  "metadata": {"order_id": "12345"}
 }
 ```
 
-### payment.failed
+## Payment Failed
 
-Sent when a payment fails.
+Sent when a payment attempt fails.
 
 ```json
 {
   "event_type": "payment.failed",
   "session_id": "550e8400-e29b-41d4-a716-446655440000",
-  "timestamp": "2024-01-15T10:35:00Z",
+  "timestamp": "2026-02-11T10:35:00Z",
   "caller_phone": "+14155551234",
   "amount_cents": 2500,
   "currency": "USD",
-  "description": "Monthly subscription",
+  "description": "Order #12345",
   "status": "payment-failed",
   "error_code": "card_declined",
-  "error_message": "Your card was declined",
-  "customer_id": "your-customer-123",
-  "metadata": {}
+  "error_message": "Your card was declined.",
+  "metadata": {"order_id": "12345"}
 }
 ```
 
-### payment.tokenized
+## Payment Tokenized
 
 Sent when a card is saved (tokenize mode).
 
@@ -87,77 +72,140 @@ Sent when a card is saved (tokenize mode).
 {
   "event_type": "payment.tokenized",
   "session_id": "550e8400-e29b-41d4-a716-446655440000",
-  "timestamp": "2024-01-15T10:35:00Z",
+  "timestamp": "2026-02-11T10:35:00Z",
   "caller_phone": "+14155551234",
-  "amount_cents": 2500,
+  "amount_cents": 0,
   "currency": "USD",
-  "description": "Save card for later",
+  "description": "Save card",
   "status": "payment-success",
   "card_brand": "visa",
   "card_last4": "4242",
-  "token_id": "pm_xxx",
-  "platform_token_id": "pm_xxx",
-  "customer_id": "your-customer-123",
-  "customer_name": "John Doe",
+  "payment_method_id": "pm_xxx",
   "metadata": {}
 }
 ```
 
-## Verifying Webhooks
+## Status Changed
 
-Webhooks include an HMAC-SHA256 signature in the `X-Maven-Signature` header. Verify it using your webhook secret (from dashboard):
+Sent on any session status transition.
 
-```javascript
+```json
+{
+  "event_type": "session.status_changed",
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2026-02-11T10:30:30Z",
+  "status": "collecting",
+  "previous_status": "created",
+  "caller_phone": "+14155551234",
+  "amount_cents": 2500,
+  "description": "Order #12345",
+  "metadata": {}
+}
+```
+
+## Headers
+
+All webhook requests include these headers:
+
+| Header | Description | Example |
+|--------|-------------|---------|
+| `Content-Type` | Always JSON | `application/json` |
+| `X-Maven-Event` | Event type | `payment.success` |
+| `X-Maven-Timestamp` | Unix timestamp | `1706123456` |
+| `X-Maven-Signature` | HMAC-SHA256 signature | `abc123def456...` |
+
+## Signature Verification
+
+Verify the `X-Maven-Signature` header to ensure the webhook came from Maven.
+
+<CodeGroup>
+
+```javascript Node.js
 const crypto = require('crypto');
 
 function verifyWebhook(payload, signature, secret) {
-  const expected = crypto
+  const expectedSignature = crypto
     .createHmac('sha256', secret)
     .update(payload)
     .digest('hex');
 
-  return expected === signature;
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expectedSignature)
+  );
 }
 
-// In your webhook handler
-app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
+// Express.js example
+app.post('/webhook', express.raw({type: 'application/json'}), (req, res) => {
   const signature = req.headers['x-maven-signature'];
-  const payload = req.body.toString();
 
-  const isValid = verifyWebhook(
-    payload,
-    signature,
-    process.env.MAVEN_WEBHOOK_SECRET
-  );
-
-  if (!isValid) {
+  if (!verifyWebhook(req.body, signature, process.env.WEBHOOK_SECRET)) {
     return res.status(401).send('Invalid signature');
   }
 
-  // Process webhook
-  const data = JSON.parse(payload);
-  console.log(`Received ${data.event_type} for session ${data.session_id}`);
+  const event = JSON.parse(req.body);
+
+  switch (event.event_type) {
+    case 'payment.success':
+      // Handle successful payment
+      break;
+    case 'payment.failed':
+      // Handle failed payment
+      break;
+  }
 
   res.status(200).send('OK');
 });
 ```
 
-<Warning>
-  Webhooks timeout after **10 seconds**. Return a 200 response immediately, then process asynchronously if needed.
-</Warning>
+```python Python
+import hmac
+import hashlib
+
+def verify_webhook(payload_body: bytes, signature: str, secret: str) -> bool:
+    expected = hmac.new(
+        secret.encode(),
+        payload_body,
+        hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature)
+```
+
+</CodeGroup>
+
+## Retry Policy
+
+Maven retries failed webhook deliveries with exponential backoff:
+
+| Attempt | Delay |
+|---------|-------|
+| 1 | Immediate |
+| 2 | 1 minute |
+| 3 | 5 minutes |
+| 4 | 30 minutes |
+| 5 | 2 hours |
+
+Webhooks are considered failed if:
+- Response status is not 2xx
+- Connection times out (10 seconds)
+- Connection is refused
 
 ## Best Practices
 
 <AccordionGroup>
   <Accordion title="Return 200 quickly">
-    Return a 200 response immediately, then process the webhook asynchronously. Webhooks timeout after 10 seconds.
+    Return a 200 response as soon as you receive the webhook. Process the event asynchronously if needed.
   </Accordion>
 
   <Accordion title="Handle duplicates">
-    Use `session_id` to deduplicate. The same event may be sent multiple times.
+    Webhooks may be delivered more than once. Use the `session_id` to deduplicate events.
   </Accordion>
 
   <Accordion title="Verify signatures">
-    Always verify the webhook signature in production to prevent spoofing.
+    Always verify webhook signatures in production to ensure requests are from Maven.
+  </Accordion>
+
+  <Accordion title="Use HTTPS">
+    Always use HTTPS endpoints for webhook URLs in production.
   </Accordion>
 </AccordionGroup>

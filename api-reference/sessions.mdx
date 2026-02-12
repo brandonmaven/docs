@@ -5,69 +5,66 @@ description: "Create and manage payment sessions"
 
 # Sessions
 
-A session represents a single payment collection attempt. Create a session when you need to collect payment from a customer.
+Sessions represent a single payment collection attempt. Create a session when your AI agent needs to collect a payment or save a card.
 
 ## Create Session
 
-<ParamField path="POST" method="/v1/sessions">
-  Create a new payment session
-</ParamField>
+<ParamField path="POST" method="/v1/sessions" />
+
+Create a new payment session.
 
 ### Request Body
 
 <ParamField body="project" type="string" required>
-  Project slug or UUID
+  Project identifier (UUID or slug)
 </ParamField>
 
 <ParamField body="caller" type="string" required>
-  Customer's phone number in E.164 format (e.g., +14155551234)
+  Customer's phone number in E.164 format (e.g., `+14155551234`)
 </ParamField>
 
 <ParamField body="amount" type="integer" required>
-  Amount in cents (e.g., 2500 = $25.00)
+  Amount to charge in cents (e.g., `2500` for $25.00). Must be greater than 0.
 </ParamField>
 
-<ParamField body="currency" type="string" default="USD">
-  Three-letter currency code
+<ParamField body="mode" type="string" required>
+  Payment mode: `charge` (immediate payment) or `tokenize` (save card for later)
 </ParamField>
 
-<ParamField body="mode" type="string" default="charge">
-  `charge` - Charge the card immediately
-  `tokenize` - Save the card for later (no charge)
+<ParamField body="channel" type="string" default="voice">
+  Payment channel:
+  - `voice` — Customer calls an IVR number and enters card by phone
+  - `sms` — Returns a Stripe Checkout link for browser payment
 </ParamField>
 
 <ParamField body="description" type="string">
-  Description shown on card statement
+  Description shown on customer's card statement (max 500 chars)
 </ParamField>
 
 <ParamField body="callback" type="string">
-  Phone number to transfer back to after payment
-</ParamField>
-
-<ParamField body="customer_id" type="string">
-  Your internal customer ID
-</ParamField>
-
-<ParamField body="email" type="string">
-  Customer email for receipts
+  Phone number to transfer customer back to after payment (E.164 format). Voice channel only.
 </ParamField>
 
 <ParamField body="metadata" type="object">
-  Custom key-value pairs (returned in webhooks)
+  Custom key-value data attached to the session. Returned in webhooks and GET responses.
 </ParamField>
 
 ### Response
 
 <ResponseField name="session_id" type="string">
-  Unique session identifier
+  Unique session identifier (UUID)
 </ResponseField>
 
 <ResponseField name="status" type="string">
-  Session status: `created`, `collecting`, `payment-success`, `payment-failed`, `cancelled`, `expired`
+  Initial session status: `created` (voice) or `sms-sent` (SMS)
 </ResponseField>
 
 <ResponseField name="phone_number" type="string">
-  IVR phone number for the customer to call
+  IVR phone number for the customer to call. Only present for voice channel.
+</ResponseField>
+
+<ResponseField name="checkout_url" type="string">
+  Stripe Checkout URL for the customer to pay. Only present for SMS channel.
 </ResponseField>
 
 <ResponseField name="created_at" type="string">
@@ -83,90 +80,152 @@ curl -X POST https://api.trymaven.com/v1/sessions \
   -H "Authorization: Bearer mvn_test_xxx" \
   -H "Content-Type: application/json" \
   -d '{
-    "project": "my-project",
+    "project": "my-app",
     "caller": "+14155551234",
     "amount": 2500,
-    "currency": "USD",
     "mode": "charge",
-    "callback": "+14155559999",
-    "metadata": {
-      "order_id": "ORD-123"
-    }
+    "description": "Order #12345",
+    "callback": "+18005551234"
   }'
 ```
 
-```json Response
+```javascript Node.js
+const response = await fetch('https://api.trymaven.com/v1/sessions', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer mvn_test_xxx',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    project: 'my-app',
+    caller: '+14155551234',
+    amount: 2500,
+    mode: 'charge',
+    description: 'Order #12345',
+    callback: '+18005551234'
+  })
+});
+
+const session = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'https://api.trymaven.com/v1/sessions',
+    headers={'Authorization': 'Bearer mvn_test_xxx'},
+    json={
+        'project': 'my-app',
+        'caller': '+14155551234',
+        'amount': 2500,
+        'mode': 'charge',
+        'description': 'Order #12345',
+        'callback': '+18005551234'
+    }
+)
+
+session = response.json()
+```
+
+</CodeGroup>
+
+**Voice channel response:**
+```json
 {
   "session_id": "550e8400-e29b-41d4-a716-446655440000",
   "status": "created",
   "phone_number": "+14085551234",
-  "created_at": "2024-01-15T10:30:00Z"
+  "checkout_url": null,
+  "created_at": "2026-02-11T10:30:00Z"
 }
 ```
 
-</CodeGroup>
+**SMS channel response:**
+```json
+{
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "sms-sent",
+  "phone_number": null,
+  "checkout_url": "https://checkout.stripe.com/c/pay/cs_test_xxx",
+  "created_at": "2026-02-11T10:30:00Z"
+}
+```
 
 ---
 
 ## Get Session
 
-<ParamField path="GET" method="/v1/sessions/:id">
-  Get details of an existing session
+<ParamField path="GET" method="/v1/sessions/:id" />
+
+Retrieve details for a specific session.
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  Session UUID
 </ParamField>
 
 ### Response
 
-Returns full session details including payment processor information if payment was processed.
-
 ```json
 {
   "session_id": "550e8400-e29b-41d4-a716-446655440000",
-  "project_slug": "my-project",
+  "project_slug": "my-app",
   "caller": "+14155551234",
   "status": "payment-success",
   "amount": 2500,
   "currency": "USD",
+  "description": "Order #12345",
   "mode": "charge",
+  "channel": "voice",
+  "callback": "+18005551234",
+  "metadata": {"order_id": "12345"},
   "processor": {
     "type": "stripe",
+    "stripe_payment_intent_id": "pi_xxx",
     "stripe_charge_id": "ch_xxx"
   },
-  "created_at": "2024-01-15T10:30:00Z",
-  "updated_at": "2024-01-15T10:35:00Z"
+  "checkout_url": null,
+  "created_at": "2026-02-11T10:30:00Z",
+  "updated_at": "2026-02-11T10:35:00Z"
 }
 ```
+
+### Session Status Values
+
+| Status | Description |
+|--------|-------------|
+| `created` | Session created, waiting for call |
+| `sms-sent` | Checkout link created (SMS channel) |
+| `collecting` | Customer connected, collecting card info |
+| `processing` | Processing payment with Stripe |
+| `payment-success` | Payment completed successfully |
+| `payment-failed` | Payment failed |
+| `expired` | Session expired (no call/checkout received) |
+| `cancelled` | Session was cancelled |
 
 ---
 
 ## Cancel Session
 
-<ParamField path="DELETE" method="/v1/sessions/:id">
-  Cancel a pending session
+<ParamField path="POST" method="/v1/sessions/:id/cancel" />
+
+Cancel a pending session. Only sessions in `created`, `collecting`, or `sms-sent` status can be cancelled.
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  Session UUID
 </ParamField>
 
-Only sessions in `created` or `collecting` status can be cancelled.
+### Response
+
+Returns `204 No Content` on success.
+
+### Example
 
 ```bash
-curl -X DELETE https://api.trymaven.com/v1/sessions/550e8400-xxx \
+curl -X POST https://api.trymaven.com/v1/sessions/550e8400-e29b-41d4-a716-446655440000/cancel \
   -H "Authorization: Bearer mvn_test_xxx"
 ```
-
----
-
-## Session Lifecycle
-
-```
-created → collecting → payment-success
-                    → payment-failed
-                    → cancelled
-                    → expired (after 10 min)
-```
-
-| Status | Description |
-|--------|-------------|
-| `created` | Session created, waiting for call |
-| `collecting` | Customer on call, entering card |
-| `payment-success` | Payment completed |
-| `payment-failed` | Payment failed (declined, timeout) |
-| `cancelled` | Cancelled via API or customer |
-| `expired` | Session expired (10 min timeout) |

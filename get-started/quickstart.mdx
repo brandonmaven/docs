@@ -11,11 +11,11 @@ This guide will get you collecting payments in minutes.
 
 - A Maven account ([sign up here](https://app.trymaven.com))
 - A Stripe account connected via the dashboard
-- A voice agent (VAPI, Twilio, or LiveKit)
+- A voice AI platform that can transfer calls (for voice channel)
 
 ## Step 1: Get your API Key
 
-1. Go to [Dashboard → API Keys](https://app.trymaven.com/api-keys)
+1. Go to [Dashboard > API Keys](https://app.trymaven.com/api-keys)
 2. Click **Create API Key**
 3. Copy the key (starts with `mvn_test_` or `mvn_live_`)
 
@@ -25,8 +25,8 @@ This guide will get you collecting payments in minutes.
 
 ## Step 2: Connect Stripe
 
-1. Go to [Dashboard → Settings](https://app.trymaven.com/settings)
-2. Click **Connect Stripe**
+1. Go to [Dashboard > Settings > Integrations](https://app.trymaven.com/settings/integrations)
+2. Click **Connect Stripe Account**
 3. Complete the Stripe OAuth flow
 
 Payments will go directly to your connected Stripe account.
@@ -42,10 +42,9 @@ curl -X POST https://api.trymaven.com/v1/sessions \
   -H "Authorization: Bearer mvn_test_xxx" \
   -H "Content-Type: application/json" \
   -d '{
-    "project": "my-project",
+    "project": "my-app",
     "caller": "+14155551234",
     "amount": 2500,
-    "currency": "USD",
     "mode": "charge"
   }'
 ```
@@ -58,10 +57,9 @@ const response = await fetch('https://api.trymaven.com/v1/sessions', {
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
-    project: 'my-project',
+    project: 'my-app',
     caller: '+14155551234',
     amount: 2500,  // $25.00 in cents
-    currency: 'USD',
     mode: 'charge'
   })
 });
@@ -75,15 +73,11 @@ import requests
 
 response = requests.post(
     'https://api.trymaven.com/v1/sessions',
-    headers={
-        'Authorization': 'Bearer mvn_test_xxx',
-        'Content-Type': 'application/json'
-    },
+    headers={'Authorization': 'Bearer mvn_test_xxx'},
     json={
-        'project': 'my-project',
+        'project': 'my-app',
         'caller': '+14155551234',
         'amount': 2500,  # $25.00 in cents
-        'currency': 'USD',
         'mode': 'charge'
     }
 )
@@ -94,54 +88,68 @@ print(session['phone_number'])  # Number for customer to call
 
 </CodeGroup>
 
-**Response:**
+**Response (voice channel):**
 ```json
 {
   "session_id": "550e8400-e29b-41d4-a716-446655440000",
   "status": "created",
   "phone_number": "+14085551234",
-  "created_at": "2024-01-15T10:30:00Z"
+  "checkout_url": null,
+  "created_at": "2026-02-11T10:30:00Z"
 }
 ```
 
-## Step 4: Transfer the Call
-
-Have your voice agent transfer the customer to the `phone_number` returned.
-
-<Tabs>
-  <Tab title="VAPI">
-    VAPI handles this automatically when using Maven's tool endpoint.
-
-    See [VAPI Integration](/integrations/vapi) for details.
-  </Tab>
-  <Tab title="Twilio">
-    Use Twilio's `<Dial>` TwiML verb to transfer to the Maven number.
-
-    See [Twilio Integration](/integrations/twilio) for details.
-  </Tab>
-  <Tab title="LiveKit">
-    Use LiveKit's SIP transfer API to transfer to the Maven number.
-
-    See [LiveKit Integration](/integrations/livekit) for details.
-  </Tab>
-</Tabs>
-
-## Step 5: Handle the Webhook
-
-Maven sends a webhook when payment completes. Set your webhook URL in the dashboard.
+For SMS checkout, add `"channel": "sms"` to the request. You'll get a `checkout_url` instead of a `phone_number`:
 
 ```json
 {
-  "event": "payment.success",
   "session_id": "550e8400-e29b-41d4-a716-446655440000",
-  "amount": 2500,
+  "status": "sms-sent",
+  "phone_number": null,
+  "checkout_url": "https://checkout.stripe.com/c/pay/cs_test_xxx",
+  "created_at": "2026-02-11T10:30:00Z"
+}
+```
+
+## Step 4: Customer Pays
+
+**Voice channel**: Transfer the customer to the `phone_number` returned. The method depends on your voice platform:
+
+- **SIP Transfer** - Transfer to the SIP URI
+- **PSTN Transfer** - Cold transfer to the phone number
+- **Conference** - Add the Maven number to the call
+
+**SMS channel**: Send the `checkout_url` to the customer. They complete payment in the browser.
+
+## Step 5: Handle the Webhook
+
+Maven sends a webhook when payment completes. Configure your webhook URL in the app settings.
+
+```json
+{
+  "event_type": "payment.success",
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2026-02-11T10:35:00Z",
+  "caller_phone": "+14155551234",
+  "amount_cents": 2500,
   "currency": "USD",
+  "status": "payment-success",
+  "charge_id": "ch_xxx",
   "card_brand": "visa",
   "card_last4": "4242"
 }
 ```
 
-See [Webhooks](/api-reference/webhooks) for all event types.
+See [Webhooks](/api-reference/webhooks) for all event types and signature verification.
+
+## Test Cards
+
+| Number | Result |
+|--------|--------|
+| `4242 4242 4242 4242` | Success |
+| `4000 0000 0000 0002` | Decline |
+
+Expiry: any future date. CVV: any 3 digits.
 
 ## Next Steps
 
@@ -149,7 +157,7 @@ See [Webhooks](/api-reference/webhooks) for all event types.
   <Card title="Authentication" icon="key" href="/get-started/authentication">
     Learn about API keys and security
   </Card>
-  <Card title="VAPI Integration" icon="microphone" href="/integrations/vapi">
-    Set up VAPI with Maven
+  <Card title="API Reference" icon="code" href="/api-reference/overview">
+    Explore the full API
   </Card>
 </CardGroup>

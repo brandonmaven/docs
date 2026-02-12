@@ -1,72 +1,66 @@
 ---
 title: API Overview
-description: "Maven REST API reference"
+description: "Maven API reference"
 ---
 
 # API Overview
 
-The Maven API is organized around REST. It accepts JSON request bodies, returns JSON responses, and uses standard HTTP response codes.
+The Maven API allows you to create and manage payment sessions for voice AI integrations.
 
 ## Base URL
 
 ```
-https://api.trymaven.com
+https://api.trymaven.com/v1
 ```
 
 ## Authentication
 
-Include your API key in the `Authorization` header:
+All requests require an API key in the `Authorization` header:
 
 ```bash
 Authorization: Bearer mvn_test_xxxxxxxxxxxxx
 ```
 
+See [Authentication](/get-started/authentication) for details.
+
 ## Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/v1/sessions` | Create a payment session |
-| `GET` | `/v1/sessions/:id` | Get session details |
-| `DELETE` | `/v1/sessions/:id` | Cancel a session |
+| `POST` | `/sessions` | [Create a payment session](/api-reference/sessions#create-session) |
+| `GET` | `/sessions/:id` | [Get session details](/api-reference/sessions#get-session) |
+| `POST` | `/sessions/:id/cancel` | [Cancel a session](/api-reference/sessions#cancel-session) |
+| `GET` | `/projects` | [List all projects](/api-reference/projects) |
 
 ## Response Format
 
-All responses are JSON with this structure:
+All responses are JSON. Successful responses include the requested data:
 
-**Success:**
 ```json
 {
   "session_id": "550e8400-e29b-41d4-a716-446655440000",
   "status": "created",
-  ...
+  "phone_number": "+14085551234"
 }
 ```
 
-**Error:**
+## Error Handling
+
+Errors return an appropriate HTTP status code and a JSON body:
+
 ```json
 {
-  "detail": "Invalid API key"
+  "error": {
+    "code": "invalid_request",
+    "message": "Missing required field: caller"
+  }
 }
 ```
 
-## HTTP Status Codes
-
-| Code | Description |
-|------|-------------|
-| `200` | Success |
-| `201` | Created |
-| `400` | Bad request (invalid parameters) |
-| `401` | Unauthorized (invalid API key) |
-| `404` | Not found |
-| `429` | Rate limit exceeded |
+| Status Code | Description |
+|-------------|-------------|
+| `400` | Bad request - invalid parameters |
+| `401` | Unauthorized - invalid API key |
+| `404` | Not found - resource doesn't exist |
+| `429` | Rate limited - too many requests |
 | `500` | Server error |
-
-## Idempotency
-
-To safely retry requests, include an `Idempotency-Key` header:
-
-```bash
-Idempotency-Key: unique-request-id-123
-```
-
-The same key within 24 hours will return the cached response.

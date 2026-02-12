@@ -5,7 +5,7 @@ description: "Collect payments over the phone with AI voice agents"
 
 # Welcome to Maven
 
-Maven enables AI voice agents to collect payments securely over the phone. We handle PCI compliance so you don't have to.
+Maven enables AI voice agents to collect payments securely. We handle PCI compliance so you don't have to.
 
 <CardGroup cols={2}>
   <Card title="Quick Start" icon="rocket" href="/get-started/quickstart">
@@ -22,37 +22,27 @@ Maven enables AI voice agents to collect payments securely over the phone. We ha
   <Step title="Create a session">
     Call our API with the payment amount and caller's phone number
   </Step>
-  <Step title="Transfer the call">
-    Your voice agent transfers the customer to our IVR
-  </Step>
-  <Step title="We collect payment">
-    Maven securely collects card details via DTMF (keypad tones)
+  <Step title="Customer pays">
+    **Voice**: Transfer the call to our IVR — we collect card details by phone keypad.
+    **SMS**: Customer opens a Stripe Checkout link and pays in the browser.
   </Step>
   <Step title="Get notified">
-    We send a webhook with the result and transfer the call back
+    We send a webhook with the payment result and (for voice) transfer the call back.
   </Step>
 </Steps>
 
-## Supported Platforms
+## Channels
 
-<CardGroup cols={3}>
-  <Card title="VAPI" icon="microphone" href="/integrations/vapi" />
-  <Card title="Twilio" icon="message" href="/integrations/twilio" />
-  <Card title="LiveKit" icon="video" href="/integrations/livekit" />
-</CardGroup>
-
-## Payment Processors
-
-| Processor | Status |
-|-----------|--------|
-| Stripe | Available |
-| Authorize.Net | Coming Soon |
-| Adyen | Coming Soon |
+| Channel | How it works | Best for |
+|---------|-------------|----------|
+| **Voice** | Customer calls an IVR number, enters card digits by phone keypad | Mid-call payments during a voice AI conversation |
+| **SMS** | Customer receives a Stripe Checkout link | Async payments, post-call follow-up |
 
 ## Why Maven?
 
 - **PCI Compliant** - Card data never touches your servers (SAQ A)
-- **Natural Voice** - ElevenLabs TTS for human-like prompts
+- **Two Channels** - Voice IVR or Stripe Checkout link
+- **Natural Voice** - ElevenLabs TTS for human-like IVR prompts
 - **Transfer Back** - Return customers to your agent after payment
 - **Webhooks** - Real-time notifications for payment events
 - **Stripe Connect** - Funds go directly to your Stripe account
