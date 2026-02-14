@@ -7,9 +7,12 @@ description: "Collect payments over the phone with AI voice agents"
 
 Maven enables AI voice agents to collect payments securely. We handle PCI compliance so you don't have to.
 
-<CardGroup cols={2}>
+<CardGroup cols={3}>
   <Card title="Quick Start" icon="rocket" href="/get-started/quickstart">
     Get up and running in 5 minutes
+  </Card>
+  <Card title="Voice Integration" icon="phone" href="/get-started/voice-integration">
+    Integrate with your voice agent
   </Card>
   <Card title="API Reference" icon="code" href="/api-reference/overview">
     Explore the full API
@@ -23,8 +26,8 @@ Maven enables AI voice agents to collect payments securely. We handle PCI compli
     Call our API with the payment amount and caller's phone number
   </Step>
   <Step title="Customer pays">
-    **Voice**: Transfer the call to our IVR — we collect card details by phone keypad.
-    **SMS**: Customer opens a Stripe Checkout link and pays in the browser.
+    **Voice**: Transfer the call to our IVR — we collect card details by phone keypad or voice.
+    **SMS**: Customer receives a secure checkout link and pays in the browser.
   </Step>
   <Step title="Get notified">
     We send a webhook with the payment result and (for voice) transfer the call back.
@@ -36,13 +39,14 @@ Maven enables AI voice agents to collect payments securely. We handle PCI compli
 | Channel | How it works | Best for |
 |---------|-------------|----------|
 | **Voice** | Customer calls an IVR number, enters card digits by phone keypad | Mid-call payments during a voice AI conversation |
-| **SMS** | Customer receives a Stripe Checkout link | Async payments, post-call follow-up |
+| **SMS** | Customer receives a secure checkout link | Async payments, post-call follow-up |
 
 ## Why Maven?
 
 - **PCI Compliant** - Card data never touches your servers (SAQ A)
-- **Two Channels** - Voice IVR or Stripe Checkout link
+- **Two Channels** - Voice IVR or secure checkout link via SMS
 - **Natural Voice** - ElevenLabs TTS for human-like IVR prompts
-- **Transfer Back** - Return customers to your agent after payment
+- **DTMF & Voice Recognition** - Customers can enter card digits by keypad or speak them
+- **Transfer Back** - Return customers to your agent after payment with SIP context headers
 - **Webhooks** - Real-time notifications for payment events
-- **Stripe Connect** - Funds go directly to your Stripe account
+- **Direct to Your Account** - Funds go directly to your connected payment account

@@ -18,7 +18,8 @@
             "pages": [
               "get-started/introduction",
               "get-started/quickstart",
-              "get-started/authentication"
+              "get-started/authentication",
+              "get-started/voice-integration"
             ]
           }
         ]
@@ -31,6 +32,8 @@
             "pages": [
               "api-reference/overview",
               "api-reference/sessions",
+              "api-reference/projects",
+              "api-reference/auth",
               "api-reference/webhooks"
             ]
           }

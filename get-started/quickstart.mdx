@@ -10,7 +10,7 @@ This guide will get you collecting payments in minutes.
 ## Prerequisites
 
 - A Maven account ([sign up here](https://app.trymaven.com))
-- A Stripe account connected via the dashboard
+- A payment account connected via the dashboard
 - A voice AI platform that can transfer calls (for voice channel)
 
 ## Step 1: Get your API Key
@@ -23,13 +23,13 @@ This guide will get you collecting payments in minutes.
   Keep your API key secret. Never expose it in client-side code.
 </Warning>
 
-## Step 2: Connect Stripe
+## Step 2: Connect Your Payment Account
 
-1. Go to [Dashboard > Settings > Integrations](https://app.trymaven.com/settings/integrations)
-2. Click **Connect Stripe Account**
-3. Complete the Stripe OAuth flow
+1. Go to [Dashboard > Connections](https://app.trymaven.com/connections)
+2. Click **Connect** and follow the setup flow
+3. Complete the OAuth authorization
 
-Payments will go directly to your connected Stripe account.
+Payments will go directly to your connected account.
 
 ## Step 3: Create a Payment Session
 
@@ -106,20 +106,19 @@ For SMS checkout, add `"channel": "sms"` to the request. You'll get a `checkout_
   "session_id": "550e8400-e29b-41d4-a716-446655440000",
   "status": "sms-sent",
   "phone_number": null,
-  "checkout_url": "https://checkout.stripe.com/c/pay/cs_test_xxx",
+  "checkout_url": "https://checkout.example.com/pay/cs_test_xxx",
   "created_at": "2026-02-11T10:30:00Z"
 }
 ```
 
 ## Step 4: Customer Pays
 
-**Voice channel**: Transfer the customer to the `phone_number` returned. The method depends on your voice platform:
+**Voice channel**: Transfer the customer to the `phone_number` returned. The customer enters card details by phone keypad (DTMF) or voice (ASR). See the [Voice Integration guide](/get-started/voice-integration) for transfer methods:
 
-- **SIP Transfer** - Transfer to the SIP URI
-- **PSTN Transfer** - Cold transfer to the phone number
-- **Conference** - Add the Maven number to the call
+- **SIP Transfer** (recommended) — Fastest, supports payment context headers on transfer back
+- **PSTN Transfer** — Cold transfer to the phone number, works with any provider
 
-**SMS channel**: Send the `checkout_url` to the customer. They complete payment in the browser.
+**SMS channel**: The `checkout_url` is sent to the customer. They complete payment in the browser.
 
 ## Step 5: Handle the Webhook
 
@@ -153,7 +152,10 @@ Expiry: any future date. CVV: any 3 digits.
 
 ## Next Steps
 
-<CardGroup cols={2}>
+<CardGroup cols={3}>
+  <Card title="Voice Integration" icon="phone" href="/get-started/voice-integration">
+    Integrate with your voice agent platform
+  </Card>
   <Card title="Authentication" icon="key" href="/get-started/authentication">
     Learn about API keys and security
   </Card>

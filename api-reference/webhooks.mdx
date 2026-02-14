@@ -21,6 +21,7 @@ Maven sends webhooks to notify your server when payment events occur. Configure 
 | `payment.failed` | Payment failed |
 | `payment.tokenized` | Card saved for later use (tokenize mode) |
 | `session.status_changed` | Session status transition |
+| `session.transferring` | Call is about to be transferred back to the callback number |
 
 ## Payment Success
 
@@ -40,6 +41,9 @@ Sent when a payment (charge mode) completes successfully.
   "card_brand": "visa",
   "card_last4": "4242",
   "receipt_url": "https://pay.stripe.com/receipts/...",
+  "customer_id": null,
+  "customer_name": null,
+  "customer_email": null,
   "metadata": {"order_id": "12345"}
 }
 ```
@@ -60,6 +64,7 @@ Sent when a payment attempt fails.
   "status": "payment-failed",
   "error_code": "card_declined",
   "error_message": "Your card was declined.",
+  "customer_id": null,
   "metadata": {"order_id": "12345"}
 }
 ```
@@ -81,6 +86,9 @@ Sent when a card is saved (tokenize mode).
   "card_brand": "visa",
   "card_last4": "4242",
   "payment_method_id": "pm_xxx",
+  "customer_id": null,
+  "customer_name": null,
+  "customer_email": null,
   "metadata": {}
 }
 ```
@@ -100,6 +108,27 @@ Sent on any session status transition.
   "amount_cents": 2500,
   "description": "Order #12345",
   "metadata": {}
+}
+```
+
+## Session Transferring
+
+Sent right before the call is transferred back to the callback number. Use this to prepare your voice agent with payment context before resuming the conversation.
+
+```json
+{
+  "event_type": "session.transferring",
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2026-02-11T10:35:01Z",
+  "caller_phone": "+14155551234",
+  "transfer_to": "+18005551234",
+  "amount_cents": 2500,
+  "currency": "USD",
+  "status": "payment-success",
+  "card_brand": "visa",
+  "card_last4": "4242",
+  "customer_id": null,
+  "metadata": {"order_id": "12345"}
 }
 ```
 
@@ -175,15 +204,15 @@ def verify_webhook(payload_body: bytes, signature: str, secret: str) -> bool:
 
 ## Retry Policy
 
-Maven retries failed webhook deliveries with exponential backoff:
+Maven retries failed webhook deliveries up to 5 times with exponential backoff:
 
 | Attempt | Delay |
 |---------|-------|
 | 1 | Immediate |
-| 2 | 1 minute |
-| 3 | 5 minutes |
-| 4 | 30 minutes |
-| 5 | 2 hours |
+| 2 | 30 seconds |
+| 3 | 1 minute |
+| 4 | 2 minutes |
+| 5 | 4 minutes |
 
 Webhooks are considered failed if:
 - Response status is not 2xx

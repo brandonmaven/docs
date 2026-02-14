@@ -13,6 +13,10 @@ Sessions represent a single payment collection attempt. Create a session when yo
 
 Create a new payment session.
 
+<Note>
+  Creating a new session for a phone number that already has an active session will automatically cancel the previous session.
+</Note>
+
 ### Request Body
 
 <ParamField body="project" type="string" required>
@@ -23,7 +27,7 @@ Create a new payment session.
   Customer's phone number in E.164 format (e.g., `+14155551234`)
 </ParamField>
 
-<ParamField body="amount" type="integer" required>
+<ParamField body="amount" type="number" required>
   Amount to charge in cents (e.g., `2500` for $25.00). Must be greater than 0.
 </ParamField>
 
@@ -32,13 +36,19 @@ Create a new payment session.
 </ParamField>
 
 <ParamField body="gateway" type="string" default="stripe">
-  Payment gateway to process the payment. Currently supported: `stripe`. More gateways coming soon.
+  Payment gateway to process the payment.
 </ParamField>
 
 <ParamField body="channel" type="string" default="voice">
   Payment channel:
   - `voice` — Customer calls an IVR number and enters card by phone
-  - `sms` — Returns a Stripe Checkout link for browser payment
+  - `sms` — Returns a secure checkout link for browser payment
+</ParamField>
+
+<ParamField body="input_mode" type="string" default="dtmf">
+  Input mode for voice IVR calls:
+  - `dtmf` — Customer enters card digits using the phone keypad (default)
+  - `asr` — Customer speaks card digits using voice recognition
 </ParamField>
 
 <ParamField body="description" type="string">
@@ -68,7 +78,7 @@ Create a new payment session.
 </ResponseField>
 
 <ResponseField name="checkout_url" type="string">
-  Stripe Checkout URL for the customer to pay. Only present for SMS channel.
+  Checkout URL for the customer to pay. Only present for SMS channel.
 </ResponseField>
 
 <ResponseField name="created_at" type="string">
@@ -151,7 +161,7 @@ session = response.json()
   "session_id": "550e8400-e29b-41d4-a716-446655440000",
   "status": "sms-sent",
   "phone_number": null,
-  "checkout_url": "https://checkout.stripe.com/c/pay/cs_test_xxx",
+  "checkout_url": "https://checkout.example.com/pay/cs_test_xxx",
   "created_at": "2026-02-11T10:30:00Z"
 }
 ```
@@ -189,13 +199,65 @@ Retrieve details for a specific session.
   "processor": {
     "type": "stripe",
     "stripe_payment_intent_id": "pi_xxx",
-    "stripe_charge_id": "ch_xxx"
+    "stripe_charge_id": "ch_xxx",
+    "payment_method_id": null,
+    "card_brand": "visa",
+    "card_last4": "4242"
   },
+  "error": null,
   "checkout_url": null,
   "created_at": "2026-02-11T10:30:00Z",
-  "updated_at": "2026-02-11T10:35:00Z"
+  "updated_at": "2026-02-11T10:35:00Z",
+  "completed_at": "2026-02-11T10:35:00Z",
+  "is_terminal": true
 }
 ```
+
+<ResponseField name="session_id" type="string">
+  Unique session identifier (UUID)
+</ResponseField>
+
+<ResponseField name="project_slug" type="string">
+  Project slug
+</ResponseField>
+
+<ResponseField name="caller" type="string">
+  Customer's phone number in E.164 format
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current session status (see table below)
+</ResponseField>
+
+<ResponseField name="amount" type="number">
+  Amount in cents
+</ResponseField>
+
+<ResponseField name="currency" type="string">
+  Currency code (e.g., `USD`)
+</ResponseField>
+
+<ResponseField name="processor" type="object">
+  Payment processor details. Present after payment is processed.
+  - `type` — Always `stripe`
+  - `stripe_payment_intent_id` — Stripe PaymentIntent ID (charge mode)
+  - `stripe_charge_id` — Stripe Charge ID (charge mode)
+  - `payment_method_id` — Stripe PaymentMethod ID (tokenize mode)
+  - `card_brand` — Card brand (e.g., `visa`, `mastercard`)
+  - `card_last4` — Last 4 digits of the card
+</ResponseField>
+
+<ResponseField name="error" type="object">
+  Error details when status is `payment-failed`. Contains `code` (machine-readable) and `message` (human-readable).
+</ResponseField>
+
+<ResponseField name="is_terminal" type="boolean">
+  Whether the session has reached a final state (`payment-success`, `payment-failed`, `expired`, or `cancelled`). Useful for polling — stop polling when `true`.
+</ResponseField>
+
+<ResponseField name="completed_at" type="string">
+  ISO 8601 timestamp of when the session reached a terminal state. `null` if still in progress.
+</ResponseField>
 
 ### Session Status Values
 
@@ -204,7 +266,7 @@ Retrieve details for a specific session.
 | `created` | Session created, waiting for call |
 | `sms-sent` | Checkout link created (SMS channel) |
 | `collecting` | Customer connected, collecting card info |
-| `processing` | Processing payment with Stripe |
+| `processing` | Processing payment |
 | `payment-success` | Payment completed successfully |
 | `payment-failed` | Payment failed |
 | `expired` | Session expired (no call/checkout received) |

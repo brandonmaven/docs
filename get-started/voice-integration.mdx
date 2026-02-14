@@ -1,0 +1,183 @@
+---
+title: Voice Integration
+description: "Integrate Maven voice payments with your AI agent"
+---
+
+# Voice Integration
+
+This guide covers how to integrate Maven's voice payment collection with your AI agent platform.
+
+## How it works
+
+When your AI agent needs to collect a payment mid-call, the flow is:
+
+<Steps>
+  <Step title="Create a session">
+    Your server calls `POST /v1/sessions` with the payment details. Maven returns an IVR phone number.
+  </Step>
+  <Step title="Transfer the call">
+    Your voice agent transfers the customer to the Maven IVR number. The customer enters their card details using their phone keypad (DTMF) or by speaking (ASR).
+  </Step>
+  <Step title="Payment processes">
+    Maven tokenizes the card (PCI-compliant) and processes the charge on your connected payment account.
+  </Step>
+  <Step title="Call transfers back">
+    If you provided a `callback` number, Maven transfers the customer back to your agent after payment. You also receive a webhook with the result.
+  </Step>
+</Steps>
+
+## Transfer Methods
+
+How you transfer the call to Maven depends on your voice platform.
+
+### SIP Transfer (Recommended)
+
+SIP transfers are the fastest and support passing payment context back via SIP headers when the call returns.
+
+```
+sip:+14085551234@your-provider.sip.twilio.com
+```
+
+When Maven transfers the call back, it includes context in SIP headers:
+
+| SIP Header | Description |
+|------------|-------------|
+| `x_maven_session_id` | Payment session UUID |
+| `x_maven_status` | `payment-success` or `payment-failed` |
+| `x_maven_amount` | Amount in dollars (e.g., `25.00`) |
+| `x_maven_card_last4` | Last 4 digits of card (success only) |
+| `x_maven_card_brand` | Card brand like `visa` (success only) |
+| `x_maven_error` | Error code (failure only) |
+
+### PSTN Transfer (Cold Transfer)
+
+Transfer the customer to the Maven phone number returned in the session response. This works with any telephony provider.
+
+```
++14085551234
+```
+
+<Note>
+  PSTN transfers don't support SIP headers, so payment context is only available via webhooks. Use the `session.transferring` webhook to prepare your agent before the call returns.
+</Note>
+
+## Input Modes
+
+Maven supports two input modes for card collection:
+
+| Mode | Description | Best for |
+|------|-------------|----------|
+| `dtmf` (default) | Customer enters card digits using the phone keypad | Most reliable, works on all phones |
+| `asr` | Customer speaks card digits using voice recognition | Hands-free scenarios |
+
+Set the input mode when creating a session:
+
+```bash
+curl -X POST https://api.trymaven.com/v1/sessions \
+  -H "Authorization: Bearer mvn_test_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project": "my-app",
+    "caller": "+14155551234",
+    "amount": 2500,
+    "mode": "charge",
+    "input_mode": "dtmf",
+    "callback": "+18005551234"
+  }'
+```
+
+## Callback (Transfer Back)
+
+To have Maven transfer the customer back to your agent after payment, include a `callback` phone number or SIP URI in the session request.
+
+```json
+{
+  "project": "my-app",
+  "caller": "+14155551234",
+  "amount": 2500,
+  "mode": "charge",
+  "callback": "+18005551234"
+}
+```
+
+Maven sends a `session.transferring` webhook right before the transfer, so your receiving system can prepare with payment context.
+
+## Session Lifecycle
+
+Sessions expire after **10 minutes** if the customer doesn't call the IVR number. Creating a new session for the same phone number automatically cancels any previous active session.
+
+```
+created --> collecting --> processing --> payment-success
+  |             |                    \-> payment-failed
+  \-> expired   \-> cancelled
+  \-> cancelled
+```
+
+## Polling for Status
+
+If you prefer polling over webhooks, use the GET session endpoint and check `is_terminal`:
+
+<CodeGroup>
+
+```javascript Node.js
+async function waitForPayment(sessionId, apiKey) {
+  while (true) {
+    const res = await fetch(`https://api.trymaven.com/v1/sessions/${sessionId}`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    });
+    const session = await res.json();
+
+    if (session.is_terminal) {
+      return session;
+    }
+
+    await new Promise(r => setTimeout(r, 2000)); // Poll every 2 seconds
+  }
+}
+```
+
+```python Python
+import time
+import requests
+
+def wait_for_payment(session_id: str, api_key: str):
+    while True:
+        response = requests.get(
+            f'https://api.trymaven.com/v1/sessions/{session_id}',
+            headers={'Authorization': f'Bearer {api_key}'}
+        )
+        session = response.json()
+
+        if session['is_terminal']:
+            return session
+
+        time.sleep(2)  # Poll every 2 seconds
+```
+
+</CodeGroup>
+
+## Platform Guides
+
+### Vapi
+
+1. Create a Maven session when your Vapi agent decides to collect payment
+2. Use the `transferCall` function to transfer to the Maven IVR number
+3. Listen for the `session.transferring` webhook to resume your Vapi agent with payment context
+
+### Retell
+
+1. Create a Maven session from your server
+2. Use Retell's call transfer API to transfer to the Maven phone number
+3. Handle the webhook callback to update your agent's state
+
+### Custom Twilio
+
+If you're building directly on Twilio, use `<Dial>` to transfer to the Maven IVR number:
+
+```xml
+<Response>
+  <Dial>
+    <Number>+14085551234</Number>
+  </Dial>
+</Response>
+```
