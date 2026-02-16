@@ -39,18 +39,6 @@ Create a new payment session.
   Payment gateway to process the payment.
 </ParamField>
 
-<ParamField body="channel" type="string" default="voice">
-  Payment channel:
-  - `voice` — Customer calls an IVR number and enters card by phone
-  - `sms` — Returns a secure checkout link for browser payment
-</ParamField>
-
-<ParamField body="input_mode" type="string" default="dtmf">
-  Input mode for voice IVR calls:
-  - `dtmf` — Customer enters card digits using the phone keypad (default)
-  - `asr` — Customer speaks card digits using voice recognition
-</ParamField>
-
 <ParamField body="email" type="string">
   Customer's email address. Used for receipt delivery if enabled in project settings.
 </ParamField>
@@ -60,7 +48,7 @@ Create a new payment session.
 </ParamField>
 
 <ParamField body="customer_id" type="string">
-  Your internal customer identifier (max 255 chars). Returned in webhooks for correlation.
+  Your internal customer identifier (max 255 chars). Returned in API responses for correlation.
 </ParamField>
 
 <ParamField body="description" type="string">
@@ -68,11 +56,11 @@ Create a new payment session.
 </ParamField>
 
 <ParamField body="callback" type="string">
-  Phone number to transfer customer back to after payment (E.164 format). Voice channel only.
+  Phone number or SIP URI to transfer the customer back to after payment (E.164 format or `sip:` URI).
 </ParamField>
 
 <ParamField body="metadata" type="object">
-  Custom key-value data attached to the session. Returned in webhooks and GET responses.
+  Custom key-value data attached to the session. Returned in API responses.
 </ParamField>
 
 ### Response
@@ -82,15 +70,15 @@ Create a new payment session.
 </ResponseField>
 
 <ResponseField name="status" type="string">
-  Initial session status: `created` (voice) or `sms-sent` (SMS)
+  Initial session status: `created`
 </ResponseField>
 
 <ResponseField name="phone_number" type="string">
-  IVR phone number for the customer to call. Only present for voice channel.
+  IVR phone number for the customer to call or be transferred to.
 </ResponseField>
 
 <ResponseField name="checkout_url" type="string">
-  Checkout URL for the customer to pay. Only present for SMS channel.
+  Reserved for future use. Currently `null`.
 </ResponseField>
 
 <ResponseField name="created_at" type="string">
@@ -156,24 +144,13 @@ session = response.json()
 
 </CodeGroup>
 
-**Voice channel response:**
+**Response:**
 ```json
 {
   "session_id": "550e8400-e29b-41d4-a716-446655440000",
   "status": "created",
   "phone_number": "+14085551234",
   "checkout_url": null,
-  "created_at": "2026-02-11T10:30:00Z"
-}
-```
-
-**SMS channel response:**
-```json
-{
-  "session_id": "550e8400-e29b-41d4-a716-446655440000",
-  "status": "sms-sent",
-  "phone_number": null,
-  "checkout_url": "https://checkout.example.com/pay/cs_test_xxx",
   "created_at": "2026-02-11T10:30:00Z"
 }
 ```
@@ -209,7 +186,6 @@ Retrieve details for a specific session.
   "full_name": "Jane Smith",
   "customer_id": "cust_123",
   "gateway": "stripe",
-  "channel": "voice",
   "callback": "+18005551234",
   "checkout_url": null,
   "metadata": {"order_id": "12345"},
@@ -291,12 +267,11 @@ Retrieve details for a specific session.
 | Status | Description |
 |--------|-------------|
 | `created` | Session created, waiting for call |
-| `sms-sent` | Checkout link created (SMS channel) |
 | `collecting` | Customer connected, collecting card info |
 | `processing` | Processing payment |
 | `payment-success` | Payment completed successfully |
 | `payment-failed` | Payment failed |
-| `expired` | Session expired (no call/checkout received) |
+| `expired` | Session expired (no call received) |
 | `cancelled` | Session was cancelled |
 
 ---
@@ -355,7 +330,7 @@ session = response.json()
 
 <ParamField path="POST" method="/v1/sessions/:id/cancel" />
 
-Cancel a pending session. Only sessions in `created`, `collecting`, or `sms-sent` status can be cancelled.
+Cancel a pending session. Only sessions in `created` or `collecting` status can be cancelled.
 
 ### Path Parameters
 

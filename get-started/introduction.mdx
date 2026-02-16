@@ -5,14 +5,11 @@ description: "Collect payments over the phone with AI voice agents"
 
 # Welcome to Maven
 
-Maven enables AI voice agents to collect payments securely. We handle PCI compliance so you don't have to.
+Maven lets AI voice agents collect payments mid-call. We handle PCI compliance so you don't have to — your customer enters their card details by phone keypad, and funds go directly to your Stripe account.
 
-<CardGroup cols={3}>
-  <Card title="Quick Start" icon="rocket" href="/get-started/quickstart">
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/get-started/quickstart">
     Get up and running in 5 minutes
-  </Card>
-  <Card title="Voice Integration" icon="phone" href="/get-started/voice-integration">
-    Integrate with your voice agent
   </Card>
   <Card title="API Reference" icon="code" href="/api-reference/overview">
     Explore the full API
@@ -23,30 +20,56 @@ Maven enables AI voice agents to collect payments securely. We handle PCI compli
 
 <Steps>
   <Step title="Create a session">
-    Call our API with the payment amount and caller's phone number
+    Your server calls the Maven API with the payment amount and caller's phone number.
   </Step>
-  <Step title="Customer pays">
-    **Voice**: Transfer the call to our IVR — we collect card details by phone keypad or voice.
-    **SMS**: Customer receives a secure checkout link and pays in the browser.
+  <Step title="Transfer the call">
+    Your voice agent transfers the customer to Maven's IVR. The customer enters their card details using their phone keypad (DTMF).
   </Step>
-  <Step title="Get notified">
-    We send a webhook with the payment result and (for voice) transfer the call back.
+  <Step title="Payment completes">
+    Maven processes the charge on your connected Stripe account and transfers the call back to your agent.
   </Step>
 </Steps>
 
-## Channels
+## Supported voice platforms
 
-| Channel | How it works | Best for |
-|---------|-------------|----------|
-| **Voice** | Customer calls an IVR number, enters card digits by phone keypad | Mid-call payments during a voice AI conversation |
-| **SMS** | Customer receives a secure checkout link | Async payments, post-call follow-up |
+Integrate Maven with the voice AI platform you already use.
+
+<CardGroup cols={3}>
+  <Card title="Vapi" icon="bolt" href="/integration/vapi">
+    Use Maven with Vapi agents
+  </Card>
+  <Card title="Retell" icon="phone" href="/integration/retell">
+    Use Maven with Retell agents
+  </Card>
+  <Card title="Twilio" icon="signal" href="/integration/twilio">
+    Use Maven with Twilio
+  </Card>
+</CardGroup>
+
+Don't see your platform? [Contact us](mailto:support@trymaven.com) — we're adding new integrations regularly.
+
+## Supported payment processors
+
+<CardGroup cols={2}>
+  <Card title="Stripe" icon="stripe" href="/get-started/payment-processors">
+    Connect your Stripe account and start collecting payments immediately.
+  </Card>
+  <Card title="Braintree" icon="credit-card">
+    Coming soon.
+  </Card>
+</CardGroup>
+
+## Coming soon
+
+- **SMS checkout** — Send customers a secure payment link instead of collecting by phone
+- **Webhooks** — Real-time notifications for payment events
+- **Braintree** — Support for Braintree as a payment processor
+- **ASR voice input** — Customers speak their card digits instead of using the keypad
 
 ## Why Maven?
 
-- **PCI Compliant** - Card data never touches your servers (SAQ A)
-- **Two Channels** - Voice IVR or secure checkout link via SMS
-- **Natural Voice** - ElevenLabs TTS for human-like IVR prompts
-- **DTMF & Voice Recognition** - Customers can enter card digits by keypad or speak them
-- **Transfer Back** - Return customers to your agent after payment with SIP context headers
-- **Webhooks** - Real-time notifications for payment events
-- **Direct to Your Account** - Funds go directly to your connected payment account
+- **PCI Compliant** — Card data never touches your servers (SAQ A)
+- **Natural Voice** — ElevenLabs TTS for human-like IVR prompts
+- **Transfer Back** — Return customers to your agent after payment with SIP context headers
+- **Direct to Your Account** — Funds go directly to your connected Stripe account
+- **Simple API** — One API call to create a payment session

@@ -19,8 +19,16 @@
               "get-started/introduction",
               "get-started/quickstart",
               "get-started/authentication",
-              "get-started/voice-integration",
-              "get-started/sms-payments"
+              "get-started/payment-processors"
+            ]
+          },
+          {
+            "group": "Integration",
+            "pages": [
+              "integration/how-it-works",
+              "integration/vapi",
+              "integration/retell",
+              "integration/twilio"
             ]
           }
         ]
@@ -34,8 +42,7 @@
               "api-reference/overview",
               "api-reference/sessions",
               "api-reference/projects",
-              "api-reference/auth",
-              "api-reference/webhooks"
+              "api-reference/auth"
             ]
           }
         ]

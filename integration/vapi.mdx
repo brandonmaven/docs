@@ -1,0 +1,48 @@
+---
+title: Vapi
+description: "Collect payments with Maven in your Vapi agent"
+---
+
+# Vapi Integration
+
+Collect payments mid-call in your Vapi voice agent using Maven.
+
+## Overview
+
+1. Your Vapi agent decides to collect a payment
+2. Your server creates a Maven session via the API
+3. Use `transferCall` to transfer the customer to Maven's IVR
+4. The customer enters their card details by phone keypad
+5. Maven processes the payment and transfers the call back to your agent
+
+## Create a Session
+
+When your agent needs to collect payment, call the Maven API from your server:
+
+```bash
+curl -X POST https://api.trymaven.com/v1/sessions \
+  -H "Authorization: Bearer mvn_test_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project": "my-app",
+    "caller": "+14155551234",
+    "amount": 2500,
+    "mode": "charge",
+    "callback": "sip:your-agent@your-provider.sip.twilio.com"
+  }'
+```
+
+## Transfer the Call
+
+Use Vapi's `transferCall` function to transfer the customer to the Maven IVR number returned in the session response.
+
+The `callback` field in the session request tells Maven where to transfer the call back after payment completes.
+
+## Get the Result
+
+After the call transfers back, you can read the payment result from:
+
+- **SIP headers** (if using SIP transfer) — `x_maven_status`, `x_maven_card_last4`, etc.
+- **Polling** — `GET /v1/sessions/:id` until `is_terminal` is `true`
+
+See [How It Works](/integration/how-it-works) for the full flow, SIP headers reference, and polling examples.

@@ -1,0 +1,55 @@
+---
+title: Retell
+description: "Collect payments with Maven in your Retell agent"
+---
+
+# Retell Integration
+
+Collect payments mid-call in your Retell voice agent using Maven.
+
+## Overview
+
+1. Your Retell agent decides to collect a payment
+2. Your server creates a Maven session via the API
+3. Use Retell's call transfer API to transfer the customer to Maven's IVR
+4. The customer enters their card details by phone keypad
+5. Maven processes the payment and transfers the call back
+
+## Create a Session
+
+When your agent needs to collect payment, call the Maven API from your server:
+
+```bash
+curl -X POST https://api.trymaven.com/v1/sessions \
+  -H "Authorization: Bearer mvn_test_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project": "my-app",
+    "caller": "+14155551234",
+    "amount": 2500,
+    "mode": "charge",
+    "callback": "+18005551234"
+  }'
+```
+
+## Transfer the Call
+
+Use Retell's call transfer API to transfer the customer to the Maven IVR `phone_number` returned in the session response.
+
+## Get the Result
+
+After the call transfers back, poll the session for the payment result:
+
+```javascript
+const res = await fetch(
+  `https://api.trymaven.com/v1/sessions/${sessionId}`,
+  { headers: { 'Authorization': 'Bearer mvn_test_xxx' } }
+);
+const session = await res.json();
+
+if (session.is_terminal) {
+  console.log(session.status); // "payment-success" or "payment-failed"
+}
+```
+
+See [How It Works](/integration/how-it-works) for the full flow, transfer methods, and detailed polling examples.

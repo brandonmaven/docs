@@ -1,0 +1,64 @@
+---
+title: Twilio
+description: "Collect payments with Maven on Twilio"
+---
+
+# Twilio Integration
+
+Collect payments mid-call using Maven with your Twilio application.
+
+## Overview
+
+1. Your application decides to collect a payment
+2. Your server creates a Maven session via the API
+3. Use `<Dial>` TwiML to transfer the customer to Maven's IVR
+4. The customer enters their card details by phone keypad
+5. Maven processes the payment and transfers the call back
+
+## Create a Session
+
+When you need to collect payment, call the Maven API from your server:
+
+```bash
+curl -X POST https://api.trymaven.com/v1/sessions \
+  -H "Authorization: Bearer mvn_test_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project": "my-app",
+    "caller": "+14155551234",
+    "amount": 2500,
+    "mode": "charge",
+    "callback": "+18005551234"
+  }'
+```
+
+## Transfer the Call
+
+Use TwiML to transfer the customer to the Maven IVR number:
+
+```xml
+<Response>
+  <Dial>
+    <Number>+14085551234</Number>
+  </Dial>
+</Response>
+```
+
+For SIP transfer (recommended for getting payment context on the callback):
+
+```xml
+<Response>
+  <Dial>
+    <Sip>sip:+14085551234@your-provider.sip.twilio.com</Sip>
+  </Dial>
+</Response>
+```
+
+## Get the Result
+
+After the call transfers back, you can read the payment result from:
+
+- **SIP headers** (if using SIP transfer) — `x_maven_status`, `x_maven_card_last4`, etc.
+- **Polling** — `GET /v1/sessions/:id` until `is_terminal` is `true`
+
+See [How It Works](/integration/how-it-works) for the full flow, SIP headers reference, and polling examples.

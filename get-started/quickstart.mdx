@@ -1,17 +1,17 @@
 ---
-title: Quick Start
+title: Quickstart
 description: "Get payments working in 5 minutes"
 ---
 
-# Quick Start
+# Quickstart
 
-This guide will get you collecting payments in minutes.
+This guide will get you collecting voice payments in minutes.
 
 ## Prerequisites
 
 - A Maven account ([sign up here](https://app.trymaven.com))
-- A payment account connected via the dashboard
-- A voice AI platform that can transfer calls (for voice channel)
+- A Stripe account connected via the dashboard
+- A voice AI platform that can transfer calls (Vapi, Retell, Twilio, etc.)
 
 ## Step 1: Get your API Key
 
@@ -23,13 +23,13 @@ This guide will get you collecting payments in minutes.
   Keep your API key secret. Never expose it in client-side code.
 </Warning>
 
-## Step 2: Connect Your Payment Account
+## Step 2: Connect Stripe
 
 1. Go to [Dashboard > Connections](https://app.trymaven.com/connections)
-2. Click **Connect** and follow the setup flow
-3. Complete the OAuth authorization
+2. Click **Connect** and follow the Stripe OAuth flow
+3. Complete the authorization
 
-Payments will go directly to your connected account.
+Payments will go directly to your connected Stripe account. See [Payment Processors](/get-started/payment-processors) for details.
 
 ## Step 3: Create a Payment Session
 
@@ -65,7 +65,7 @@ const response = await fetch('https://api.trymaven.com/v1/sessions', {
 });
 
 const session = await response.json();
-console.log(session.phone_number); // Number for customer to call
+console.log(session.phone_number); // IVR number for call transfer
 ```
 
 ```python Python
@@ -83,12 +83,12 @@ response = requests.post(
 )
 
 session = response.json()
-print(session['phone_number'])  # Number for customer to call
+print(session['phone_number'])  # IVR number for call transfer
 ```
 
 </CodeGroup>
 
-**Response (voice channel):**
+**Response:**
 ```json
 {
   "session_id": "550e8400-e29b-41d4-a716-446655440000",
@@ -99,47 +99,32 @@ print(session['phone_number'])  # Number for customer to call
 }
 ```
 
-For SMS checkout, add `"channel": "sms"` to the request. You'll get a `checkout_url` instead of a `phone_number`:
+## Step 4: Transfer the Call
 
-```json
-{
-  "session_id": "550e8400-e29b-41d4-a716-446655440000",
-  "status": "sms-sent",
-  "phone_number": null,
-  "checkout_url": "https://checkout.example.com/pay/cs_test_xxx",
-  "created_at": "2026-02-11T10:30:00Z"
-}
-```
-
-## Step 4: Customer Pays
-
-**Voice channel**: Transfer the customer to the `phone_number` returned. The customer enters card details by phone keypad (DTMF) or voice (ASR). See the [Voice Integration guide](/get-started/voice-integration) for transfer methods:
+Transfer the customer to the `phone_number` returned in the session response. The customer enters their card details using the phone keypad (DTMF).
 
 - **SIP Transfer** (recommended) — Fastest, supports payment context headers on transfer back
 - **PSTN Transfer** — Cold transfer to the phone number, works with any provider
 
-**SMS channel**: The `checkout_url` is sent to the customer. They complete payment in the browser.
+See [How It Works](/integration/how-it-works) for details on transfer methods and SIP headers.
 
-## Step 5: Handle the Webhook
+## Step 5: Poll for Payment Status
 
-Maven sends a webhook when payment completes. Configure your webhook URL in the app settings.
+Check the session status to know when payment completes:
 
-```json
-{
-  "event_type": "payment.success",
-  "session_id": "550e8400-e29b-41d4-a716-446655440000",
-  "timestamp": "2026-02-11T10:35:00Z",
-  "caller_phone": "+14155551234",
-  "amount_cents": 2500,
-  "currency": "USD",
-  "status": "payment-success",
-  "charge_id": "ch_xxx",
-  "card_brand": "visa",
-  "card_last4": "4242"
+```javascript
+const res = await fetch(
+  `https://api.trymaven.com/v1/sessions/${session.session_id}`,
+  { headers: { 'Authorization': 'Bearer mvn_test_xxx' } }
+);
+const result = await res.json();
+
+if (result.is_terminal) {
+  console.log(result.status); // "payment-success" or "payment-failed"
 }
 ```
 
-See [Webhooks](/api-reference/webhooks) for all event types and signature verification.
+For a full polling example, see [How It Works](/integration/how-it-works#polling-for-status).
 
 ## Test Cards
 
@@ -153,11 +138,11 @@ Expiry: any future date. CVV: any 3 digits.
 ## Next Steps
 
 <CardGroup cols={3}>
-  <Card title="Voice Integration" icon="phone" href="/get-started/voice-integration">
-    Integrate with your voice agent platform
+  <Card title="How It Works" icon="diagram-project" href="/integration/how-it-works">
+    Understand the full voice payment flow
   </Card>
-  <Card title="Authentication" icon="key" href="/get-started/authentication">
-    Learn about API keys and security
+  <Card title="Platform Guides" icon="plug" href="/integration/vapi">
+    Integrate with Vapi, Retell, or Twilio
   </Card>
   <Card title="API Reference" icon="code" href="/api-reference/overview">
     Explore the full API
