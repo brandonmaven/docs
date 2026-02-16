@@ -29,6 +29,7 @@ See [Authentication](/get-started/authentication) for details.
 |--------|----------|-------------|
 | `POST` | `/sessions` | [Create a payment session](/api-reference/sessions#create-session) |
 | `GET` | `/sessions/:id` | [Get session details](/api-reference/sessions#get-session) |
+| `GET` | `/sessions?caller={phone}` | [Get session by caller](/api-reference/sessions#get-session-by-caller) |
 | `POST` | `/sessions/:id/cancel` | [Cancel a session](/api-reference/sessions#cancel-session) |
 | `GET` | `/projects` | [List all projects](/api-reference/projects) |
 | `GET` | `/auth/check` | [Verify API key](/api-reference/auth) |
@@ -51,10 +52,7 @@ Errors return an appropriate HTTP status code and a JSON body:
 
 ```json
 {
-  "error": {
-    "code": "invalid_request",
-    "message": "Missing required field: caller"
-  }
+  "detail": "Missing required field: caller"
 }
 ```
 

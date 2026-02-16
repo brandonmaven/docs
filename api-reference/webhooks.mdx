@@ -20,6 +20,8 @@ Maven sends webhooks to notify your server when payment events occur. Configure 
 | `payment.success` | Payment completed successfully |
 | `payment.failed` | Payment failed |
 | `payment.tokenized` | Card saved for later use (tokenize mode) |
+| `payment.refunded` | Payment was refunded |
+| `payment.disputed` | Payment was disputed (chargeback) |
 | `session.status_changed` | Session status transition |
 | `session.transferring` | Call is about to be transferred back to the callback number |
 
@@ -90,6 +92,48 @@ Sent when a card is saved (tokenize mode).
   "customer_name": null,
   "customer_email": null,
   "metadata": {}
+}
+```
+
+## Payment Refunded
+
+Sent when a charge is refunded on your connected Stripe account.
+
+```json
+{
+  "event_type": "payment.refunded",
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2026-02-11T12:00:00Z",
+  "caller_phone": "+14155551234",
+  "amount_cents": 2500,
+  "currency": "USD",
+  "refund_amount_cents": 2500,
+  "charge_id": "ch_xxx",
+  "refund_id": "re_xxx",
+  "reason": "requested_by_customer",
+  "customer_id": null,
+  "metadata": {"order_id": "12345"}
+}
+```
+
+## Payment Disputed
+
+Sent when a dispute (chargeback) is opened against a charge.
+
+```json
+{
+  "event_type": "payment.disputed",
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2026-02-11T12:00:00Z",
+  "caller_phone": "+14155551234",
+  "amount_cents": 2500,
+  "currency": "USD",
+  "dispute_amount_cents": 2500,
+  "charge_id": "ch_xxx",
+  "dispute_id": "dp_xxx",
+  "reason": "fraudulent",
+  "customer_id": null,
+  "metadata": {"order_id": "12345"}
 }
 ```
 

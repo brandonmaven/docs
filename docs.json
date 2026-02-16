@@ -19,7 +19,8 @@
               "get-started/introduction",
               "get-started/quickstart",
               "get-started/authentication",
-              "get-started/voice-integration"
+              "get-started/voice-integration",
+              "get-started/sms-payments"
             ]
           }
         ]

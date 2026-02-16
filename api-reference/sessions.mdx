@@ -51,6 +51,18 @@ Create a new payment session.
   - `asr` — Customer speaks card digits using voice recognition
 </ParamField>
 
+<ParamField body="email" type="string">
+  Customer's email address. Used for receipt delivery if enabled in project settings.
+</ParamField>
+
+<ParamField body="full_name" type="string">
+  Customer's full name (max 255 chars).
+</ParamField>
+
+<ParamField body="customer_id" type="string">
+  Your internal customer identifier (max 255 chars). Returned in webhooks for correlation.
+</ParamField>
+
 <ParamField body="description" type="string">
   Description shown on customer's card statement (max 500 chars)
 </ParamField>
@@ -188,28 +200,31 @@ Retrieve details for a specific session.
   "project_slug": "my-app",
   "caller": "+14155551234",
   "status": "payment-success",
+  "is_terminal": true,
   "amount": 2500,
   "currency": "USD",
-  "description": "Order #12345",
   "mode": "charge",
+  "description": "Order #12345",
+  "email": "customer@example.com",
+  "full_name": "Jane Smith",
+  "customer_id": "cust_123",
   "gateway": "stripe",
   "channel": "voice",
   "callback": "+18005551234",
+  "checkout_url": null,
   "metadata": {"order_id": "12345"},
   "processor": {
-    "type": "stripe",
     "stripe_payment_intent_id": "pi_xxx",
     "stripe_charge_id": "ch_xxx",
     "payment_method_id": null,
     "card_brand": "visa",
-    "card_last4": "4242"
+    "card_last4": "4242",
+    "receipt_url": "https://pay.stripe.com/receipts/..."
   },
   "error": null,
-  "checkout_url": null,
   "created_at": "2026-02-11T10:30:00Z",
   "updated_at": "2026-02-11T10:35:00Z",
-  "completed_at": "2026-02-11T10:35:00Z",
-  "is_terminal": true
+  "completed_at": "2026-02-11T10:35:00Z"
 }
 ```
 
@@ -229,6 +244,10 @@ Retrieve details for a specific session.
   Current session status (see table below)
 </ResponseField>
 
+<ResponseField name="is_terminal" type="boolean">
+  Whether the session has reached a final state (`payment-success`, `payment-failed`, `expired`, or `cancelled`). Useful for polling — stop polling when `true`.
+</ResponseField>
+
 <ResponseField name="amount" type="number">
   Amount in cents
 </ResponseField>
@@ -237,22 +256,30 @@ Retrieve details for a specific session.
   Currency code (e.g., `USD`)
 </ResponseField>
 
+<ResponseField name="email" type="string">
+  Customer's email address, if provided
+</ResponseField>
+
+<ResponseField name="full_name" type="string">
+  Customer's full name, if provided
+</ResponseField>
+
+<ResponseField name="customer_id" type="string">
+  Merchant's customer identifier, if provided
+</ResponseField>
+
 <ResponseField name="processor" type="object">
   Payment processor details. Present after payment is processed.
-  - `type` — Always `stripe`
   - `stripe_payment_intent_id` — Stripe PaymentIntent ID (charge mode)
   - `stripe_charge_id` — Stripe Charge ID (charge mode)
   - `payment_method_id` — Stripe PaymentMethod ID (tokenize mode)
   - `card_brand` — Card brand (e.g., `visa`, `mastercard`)
   - `card_last4` — Last 4 digits of the card
+  - `receipt_url` — Stripe-hosted receipt URL (charge mode)
 </ResponseField>
 
 <ResponseField name="error" type="object">
   Error details when status is `payment-failed`. Contains `code` (machine-readable) and `message` (human-readable).
-</ResponseField>
-
-<ResponseField name="is_terminal" type="boolean">
-  Whether the session has reached a final state (`payment-success`, `payment-failed`, `expired`, or `cancelled`). Useful for polling — stop polling when `true`.
 </ResponseField>
 
 <ResponseField name="completed_at" type="string">
@@ -271,6 +298,56 @@ Retrieve details for a specific session.
 | `payment-failed` | Payment failed |
 | `expired` | Session expired (no call/checkout received) |
 | `cancelled` | Session was cancelled |
+
+---
+
+## Get Session by Caller
+
+<ParamField path="GET" method="/v1/sessions?caller={phone}" />
+
+Look up the most recent session for a phone number. Returns the active session if one exists, otherwise falls back to the most recent terminal session.
+
+### Query Parameters
+
+<ParamField query="caller" type="string" required>
+  Customer's phone number in E.164 format (e.g., `+14155551234`)
+</ParamField>
+
+### Response
+
+Same response format as [Get Session](#get-session).
+
+### Example
+
+<CodeGroup>
+
+```bash cURL
+curl "https://api.trymaven.com/v1/sessions?caller=%2B14155551234" \
+  -H "Authorization: Bearer mvn_test_xxx"
+```
+
+```javascript Node.js
+const phone = encodeURIComponent('+14155551234');
+const response = await fetch(`https://api.trymaven.com/v1/sessions?caller=${phone}`, {
+  headers: { 'Authorization': 'Bearer mvn_test_xxx' }
+});
+
+const session = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    'https://api.trymaven.com/v1/sessions',
+    params={'caller': '+14155551234'},
+    headers={'Authorization': 'Bearer mvn_test_xxx'}
+)
+
+session = response.json()
+```
+
+</CodeGroup>
 
 ---
 
