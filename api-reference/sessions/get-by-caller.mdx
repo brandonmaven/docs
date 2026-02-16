@@ -19,14 +19,14 @@ Same response format as [Get Session](/api-reference/sessions/get).
 <RequestExample>
 
 ```bash cURL
-curl "https://api.trymaven.com/v1/sessions?caller=%2B14155551234" \
-  -H "Authorization: Bearer mvn_test_xxx"
+curl "https://api.trymaven.com/v1/sessions?caller={caller}" \
+  -H "Authorization: Bearer {api_key}"
 ```
 
 ```javascript Node.js
-const phone = encodeURIComponent('+14155551234');
+const phone = encodeURIComponent('{caller}');
 const response = await fetch(`https://api.trymaven.com/v1/sessions?caller=${phone}`, {
-  headers: { 'Authorization': 'Bearer mvn_test_xxx' }
+  headers: { 'Authorization': 'Bearer {api_key}' }
 });
 
 const session = await response.json();
@@ -37,8 +37,8 @@ import requests
 
 response = requests.get(
     'https://api.trymaven.com/v1/sessions',
-    params={'caller': '+14155551234'},
-    headers={'Authorization': 'Bearer mvn_test_xxx'}
+    params={'caller': '{caller}'},
+    headers={'Authorization': 'Bearer {api_key}'}
 )
 
 session = response.json()
@@ -50,9 +50,9 @@ session = response.json()
 
 ```json Response
 {
-  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "session_id": "{session_id}",
   "project_slug": "my-app",
-  "caller": "+14155551234",
+  "caller": "{caller}",
   "status": "payment-success",
   "is_terminal": true,
   "amount": 2500,
@@ -63,7 +63,7 @@ session = response.json()
   "full_name": "Jane Smith",
   "customer_id": "cust_123",
   "gateway": "stripe",
-  "callback": "+18005551234",
+  "callback": "{callback}",
   "checkout_url": null,
   "metadata": {"order_id": "12345"},
   "processor": {
