@@ -1,0 +1,150 @@
+---
+title: "Create Session"
+api: "POST /v1/sessions"
+description: "Create a new payment session"
+---
+
+Create a new payment session. Sessions represent a single payment collection attempt — create one when your AI agent needs to collect a payment or save a card.
+
+<Note>
+  Creating a new session for a phone number that already has an active session will automatically cancel the previous session.
+</Note>
+
+## Request Body
+
+<ParamField body="project" type="string" required>
+  Project identifier (UUID or slug)
+</ParamField>
+
+<ParamField body="caller" type="string" required>
+  Customer's phone number in E.164 format (e.g., `+14155551234`)
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Amount to charge in cents (e.g., `2500` for $25.00). Must be greater than 0.
+</ParamField>
+
+<ParamField body="mode" type="string" required>
+  Payment mode: `charge` (immediate payment) or `tokenize` (save card for later)
+</ParamField>
+
+<ParamField body="gateway" type="string" default="stripe">
+  Payment gateway to process the payment.
+</ParamField>
+
+<ParamField body="email" type="string">
+  Customer's email address. Used for receipt delivery if enabled in project settings.
+</ParamField>
+
+<ParamField body="full_name" type="string">
+  Customer's full name (max 255 chars).
+</ParamField>
+
+<ParamField body="customer_id" type="string">
+  Your internal customer identifier (max 255 chars). Returned in API responses for correlation.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Description shown on customer's card statement (max 500 chars)
+</ParamField>
+
+<ParamField body="callback" type="string">
+  Phone number or SIP URI to transfer the customer back to after payment (E.164 format or `sip:` URI).
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Custom key-value data attached to the session. Returned in API responses.
+</ParamField>
+
+## Response
+
+<ResponseField name="session_id" type="string">
+  Unique session identifier (UUID)
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Initial session status: `created`
+</ResponseField>
+
+<ResponseField name="phone_number" type="string">
+  IVR phone number for the customer to call or be transferred to.
+</ResponseField>
+
+<ResponseField name="checkout_url" type="string">
+  Reserved for future use. Currently `null`.
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.trymaven.com/v1/sessions \
+  -H "Authorization: Bearer mvn_test_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project": "my-app",
+    "caller": "+14155551234",
+    "amount": 2500,
+    "mode": "charge",
+    "description": "Order #12345",
+    "callback": "+18005551234"
+  }'
+```
+
+```javascript Node.js
+const response = await fetch('https://api.trymaven.com/v1/sessions', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer mvn_test_xxx',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    project: 'my-app',
+    caller: '+14155551234',
+    amount: 2500,
+    mode: 'charge',
+    description: 'Order #12345',
+    callback: '+18005551234'
+  })
+});
+
+const session = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'https://api.trymaven.com/v1/sessions',
+    headers={'Authorization': 'Bearer mvn_test_xxx'},
+    json={
+        'project': 'my-app',
+        'caller': '+14155551234',
+        'amount': 2500,
+        'mode': 'charge',
+        'description': 'Order #12345',
+        'callback': '+18005551234'
+    }
+)
+
+session = response.json()
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "created",
+  "phone_number": "+14085551234",
+  "checkout_url": null,
+  "created_at": "2026-02-11T10:30:00Z"
+}
+```
+
+</ResponseExample>

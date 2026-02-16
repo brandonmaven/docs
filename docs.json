@@ -40,7 +40,15 @@
             "group": "API Reference",
             "pages": [
               "api-reference/overview",
-              "api-reference/sessions",
+              {
+                "group": "Sessions",
+                "pages": [
+                  "api-reference/sessions/create",
+                  "api-reference/sessions/get",
+                  "api-reference/sessions/get-by-caller",
+                  "api-reference/sessions/cancel"
+                ]
+              },
               "api-reference/projects",
               "api-reference/auth"
             ]
