@@ -1,22 +1,18 @@
 ---
-title: Payment Processors
-description: "Connect your payment processor to Maven"
+title: Stripe
+description: "Connect Stripe to Maven for voice payments"
 ---
-
-Maven processes payments on your connected payment account. Funds go directly to you — Maven never holds your money.
-
-## Stripe
 
 Maven integrates with Stripe via OAuth Connect. Connecting your Stripe account takes less than a minute.
 
-### Setup
+## Setup
 
 1. Go to [Dashboard > Connections](https://app.trymaven.com/connections)
 2. Click **Connect Stripe**
 3. Authorize Maven to process payments on your Stripe account
 4. You're done — payments will go directly to your connected account
 
-### Test vs Live Mode
+## Test vs Live Mode
 
 Your Maven API key determines whether payments are processed in test or live mode:
 
@@ -27,7 +23,7 @@ Your Maven API key determines whether payments are processed in test or live mod
 
 Use test mode keys during development. Switch to live mode keys when you're ready to accept real payments.
 
-### Test Cards
+## Test Cards
 
 In test mode, use these Stripe test card numbers:
 
@@ -37,12 +33,6 @@ In test mode, use these Stripe test card numbers:
 | `4000 0000 0000 0002` | Decline |
 
 Expiry: any future date. CVV: any 3 digits.
-
-## Braintree
-
-<Info>
-  Braintree support is coming soon. [Contact us](mailto:founders@trymaven.com) if you'd like early access.
-</Info>
 
 ---
 

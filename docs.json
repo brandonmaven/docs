@@ -18,17 +18,24 @@
             "pages": [
               "get-started/introduction",
               "get-started/quickstart",
-              "get-started/authentication",
-              "get-started/payment-processors"
+              "get-started/how-it-works",
+              "get-started/authentication"
             ]
           },
           {
-            "group": "Integration",
+            "group": "Payment Processors",
             "pages": [
-              "integration/how-it-works",
+              "get-started/stripe",
+              "get-started/braintree"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
               "integration/vapi",
               "integration/retell",
-              "integration/twilio"
+              "integration/twilio",
+              "integration/livekit"
             ]
           }
         ]
@@ -39,18 +46,24 @@
           {
             "group": "API Reference",
             "pages": [
-              "api-reference/overview",
-              {
-                "group": "Sessions",
-                "pages": [
-                  "api-reference/sessions/create",
-                  "api-reference/sessions/get",
-                  "api-reference/sessions/get-by-caller",
-                  "api-reference/sessions/cancel"
-                ]
-              },
+              "api-reference/overview"
+            ]
+          },
+          {
+            "group": "Sessions",
+            "pages": [
+              "api-reference/sessions/create",
+              "api-reference/sessions/get",
+              "api-reference/sessions/get-by-caller",
+              "api-reference/sessions/cancel"
+            ]
+          },
+          {
+            "group": "Resources",
+            "pages": [
               "api-reference/projects",
-              "api-reference/auth"
+              "api-reference/auth",
+              "api-reference/webhooks"
             ]
           }
         ]

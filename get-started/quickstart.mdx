@@ -27,7 +27,7 @@ This guide will get you collecting voice payments in minutes.
 2. Click **Connect** and follow the Stripe OAuth flow
 3. Complete the authorization
 
-Payments will go directly to your connected Stripe account. See [Payment Processors](/get-started/payment-processors) for details.
+Payments will go directly to your connected Stripe account. See [Stripe](/get-started/stripe) for details.
 
 ## Step 3: Create a Payment Session
 
@@ -104,7 +104,7 @@ Transfer the customer to the `phone_number` returned in the session response. Th
 - **SIP Transfer** (recommended) — Fastest, supports payment context headers on transfer back
 - **PSTN Transfer** — Cold transfer to the phone number, works with any provider
 
-See [How It Works](/integration/how-it-works) for details on transfer methods and SIP headers.
+See [How It Works](/get-started/how-it-works) for details on transfer methods and SIP headers.
 
 ## Step 5: Poll for Payment Status
 
@@ -122,7 +122,7 @@ if (result.is_terminal) {
 }
 ```
 
-For a full polling example, see [How It Works](/integration/how-it-works#polling-for-status).
+For a full polling example, see [How It Works](/get-started/how-it-works#polling-for-status).
 
 ## Test Cards
 
@@ -136,7 +136,7 @@ Expiry: any future date. CVV: any 3 digits.
 ## Next Steps
 
 <CardGroup cols={3}>
-  <Card title="How It Works" icon="diagram-project" href="/integration/how-it-works">
+  <Card title="How It Works" icon="diagram-project" href="/get-started/how-it-works">
     Understand the full voice payment flow
   </Card>
   <Card title="Platform Guides" icon="plug" href="/integration/vapi">
