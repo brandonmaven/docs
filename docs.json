@@ -19,6 +19,7 @@
               "get-started/introduction",
               "get-started/quickstart",
               "get-started/how-it-works",
+              "get-started/sms-checkout",
               "get-started/authentication"
             ]
           },
@@ -46,7 +47,8 @@
           {
             "group": "API Reference",
             "pages": [
-              "api-reference/overview"
+              "api-reference/overview",
+              "api-reference/errors"
             ]
           },
           {
@@ -59,11 +61,21 @@
             ]
           },
           {
-            "group": "Resources",
+            "group": "Projects",
             "pages": [
-              "api-reference/projects",
-              "api-reference/auth",
-              "api-reference/webhooks"
+              "api-reference/projects/list"
+            ]
+          },
+          {
+            "group": "Auth",
+            "pages": [
+              "api-reference/auth/check"
+            ]
+          },
+          {
+            "group": "Webhooks",
+            "pages": [
+              "api-reference/webhooks/overview"
             ]
           }
         ]
@@ -71,6 +83,11 @@
     ],
     "global": {}
   },
+  "redirects": [
+    { "source": "/api-reference/auth", "destination": "/api-reference/auth/check" },
+    { "source": "/api-reference/projects", "destination": "/api-reference/projects/list" },
+    { "source": "/api-reference/webhooks", "destination": "/api-reference/webhooks/overview" }
+  ],
   "logo": {
     "light": "/logo/maven.png",
     "dark": "/logo/maven.png",

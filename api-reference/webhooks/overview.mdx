@@ -1,31 +1,32 @@
 ---
 title: Webhooks
+sidebarTitle: "Overview"
 description: "Receive real-time payment notifications"
 ---
 
-# Webhooks
-
-Maven sends webhooks to notify your server when payment events occur. Configure your webhook URL in the app settings in the dashboard.
+Maven sends webhooks to notify your server when payment events occur. Configure a webhook URL per project in the [dashboard](https://app.trymaven.com) project settings.
 
 ## Configuration
 
-1. Go to your app settings in the dashboard
-2. Enter your webhook URL
-3. Copy the webhook secret for signature verification
+1. Go to your project settings in the dashboard
+2. Enter your webhook endpoint URL
+3. Copy the generated webhook secret for signature verification
 
 ## Event Types
 
 | Event | Description |
 |-------|-------------|
 | `payment.success` | Payment completed successfully |
-| `payment.failed` | Payment failed |
+| `payment.failed` | Payment failed or checkout expired |
 | `payment.tokenized` | Card saved for later use (tokenize mode) |
 | `payment.refunded` | Payment was refunded |
 | `payment.disputed` | Payment was disputed (chargeback) |
 | `session.status_changed` | Session status transition |
 | `session.transferring` | Call is about to be transferred back to the callback number |
 
-## Payment Success
+## Payload Examples
+
+### payment.success
 
 Sent when a payment (charge mode) completes successfully.
 
@@ -39,20 +40,20 @@ Sent when a payment (charge mode) completes successfully.
   "currency": "USD",
   "description": "Order #12345",
   "status": "payment-success",
-  "charge_id": "ch_xxx",
+  "charge_id": "ch_3PqR7sK2x...",
   "card_brand": "visa",
   "card_last4": "4242",
   "receipt_url": "https://pay.stripe.com/receipts/...",
-  "customer_id": null,
-  "customer_name": null,
-  "customer_email": null,
+  "customer_id": "cust_123",
+  "customer_name": "Jane Smith",
+  "customer_email": "jane@example.com",
   "metadata": {"order_id": "12345"}
 }
 ```
 
-## Payment Failed
+### payment.failed
 
-Sent when a payment attempt fails.
+Sent when a payment attempt fails or an SMS checkout expires.
 
 ```json
 {
@@ -71,7 +72,7 @@ Sent when a payment attempt fails.
 }
 ```
 
-## Payment Tokenized
+### payment.tokenized
 
 Sent when a card is saved (tokenize mode).
 
@@ -87,15 +88,15 @@ Sent when a card is saved (tokenize mode).
   "status": "payment-success",
   "card_brand": "visa",
   "card_last4": "4242",
-  "payment_method_id": "pm_xxx",
+  "payment_method_id": "pm_1PqR7sK2x...",
   "customer_id": null,
-  "customer_name": null,
-  "customer_email": null,
+  "customer_name": "Jane Smith",
+  "customer_email": "jane@example.com",
   "metadata": {}
 }
 ```
 
-## Payment Refunded
+### payment.refunded
 
 Sent when a charge is refunded on your connected Stripe account.
 
@@ -108,15 +109,15 @@ Sent when a charge is refunded on your connected Stripe account.
   "amount_cents": 2500,
   "currency": "USD",
   "refund_amount_cents": 2500,
-  "charge_id": "ch_xxx",
-  "refund_id": "re_xxx",
+  "charge_id": "ch_3PqR7sK2x...",
+  "refund_id": "re_1PqR7sK2x...",
   "reason": "requested_by_customer",
   "customer_id": null,
   "metadata": {"order_id": "12345"}
 }
 ```
 
-## Payment Disputed
+### payment.disputed
 
 Sent when a dispute (chargeback) is opened against a charge.
 
@@ -129,15 +130,15 @@ Sent when a dispute (chargeback) is opened against a charge.
   "amount_cents": 2500,
   "currency": "USD",
   "dispute_amount_cents": 2500,
-  "charge_id": "ch_xxx",
-  "dispute_id": "dp_xxx",
+  "charge_id": "ch_3PqR7sK2x...",
+  "dispute_id": "dp_1PqR7sK2x...",
   "reason": "fraudulent",
   "customer_id": null,
   "metadata": {"order_id": "12345"}
 }
 ```
 
-## Status Changed
+### session.status_changed
 
 Sent on any session status transition.
 
@@ -155,7 +156,7 @@ Sent on any session status transition.
 }
 ```
 
-## Session Transferring
+### session.transferring
 
 Sent right before the call is transferred back to the callback number. Use this to prepare your voice agent with payment context before resuming the conversation.
 
@@ -184,12 +185,12 @@ All webhook requests include these headers:
 |--------|-------------|---------|
 | `Content-Type` | Always JSON | `application/json` |
 | `X-Maven-Event` | Event type | `payment.success` |
-| `X-Maven-Timestamp` | Unix timestamp | `1706123456` |
-| `X-Maven-Signature` | HMAC-SHA256 signature | `abc123def456...` |
+| `X-Maven-Timestamp` | Unix timestamp | `1739270100` |
+| `X-Maven-Signature` | HMAC-SHA256 signature | `a1b2c3d4e5f6...` |
 
 ## Signature Verification
 
-Verify the `X-Maven-Signature` header to ensure the webhook came from Maven.
+Verify the `X-Maven-Signature` header to ensure the webhook came from Maven. The signature is computed as an HMAC-SHA256 hex digest of the raw request body using your project's webhook secret.
 
 <CodeGroup>
 
@@ -234,6 +235,7 @@ app.post('/webhook', express.raw({type: 'application/json'}), (req, res) => {
 ```python Python
 import hmac
 import hashlib
+import json
 
 def verify_webhook(payload_body: bytes, signature: str, secret: str) -> bool:
     expected = hmac.new(
@@ -242,6 +244,30 @@ def verify_webhook(payload_body: bytes, signature: str, secret: str) -> bool:
         hashlib.sha256
     ).hexdigest()
     return hmac.compare_digest(expected, signature)
+
+# FastAPI example
+from fastapi import FastAPI, Request, HTTPException
+
+app = FastAPI()
+
+@app.post("/webhook")
+async def handle_webhook(request: Request):
+    body = await request.body()
+    signature = request.headers.get("x-maven-signature", "")
+
+    if not verify_webhook(body, signature, WEBHOOK_SECRET):
+        raise HTTPException(status_code=401, detail="Invalid signature")
+
+    event = json.loads(body)
+
+    if event["event_type"] == "payment.success":
+        # Handle successful payment
+        pass
+    elif event["event_type"] == "payment.failed":
+        # Handle failed payment
+        pass
+
+    return {"status": "ok"}
 ```
 
 </CodeGroup>

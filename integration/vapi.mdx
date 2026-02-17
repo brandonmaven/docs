@@ -40,7 +40,7 @@ The `callback` field in the session request tells Maven where to transfer the ca
 
 After the call transfers back, you can read the payment result from:
 
-- **SIP headers** (if using SIP transfer) — `x_maven_status`, `x_maven_card_last4`, etc.
-- **Polling** — `GET /v1/sessions/:id` until `is_terminal` is `true`
+- **SIP headers** (if using SIP transfer): `x_maven_status`, `x_maven_card_last4`, etc.
+- **Polling**: `GET /v1/sessions/:id` until `is_terminal` is `true`
 
 See [How It Works](/get-started/how-it-works) for the full flow, SIP headers reference, and polling examples.

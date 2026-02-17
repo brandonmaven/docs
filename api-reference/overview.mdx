@@ -3,8 +3,6 @@ title: API Overview
 description: "Maven API reference"
 ---
 
-The Maven API allows you to create and manage payment sessions for voice AI integrations.
-
 ## Base URL
 
 ```
@@ -16,7 +14,7 @@ https://api.trymaven.com/v1
 All requests require an API key in the `Authorization` header:
 
 ```bash
-Authorization: Bearer mvn_test_xxxxxxxxxxxxx
+Authorization: Bearer sk_live_your_api_key
 ```
 
 See [Authentication](/get-started/authentication) for details.
@@ -25,24 +23,12 @@ See [Authentication](/get-started/authentication) for details.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/sessions` | [Create a payment session](/api-reference/sessions#create-session) |
-| `GET` | `/sessions/:id` | [Get session details](/api-reference/sessions#get-session) |
-| `GET` | `/sessions?caller={phone}` | [Get session by caller](/api-reference/sessions#get-session-by-caller) |
-| `POST` | `/sessions/:id/cancel` | [Cancel a session](/api-reference/sessions#cancel-session) |
-| `GET` | `/projects` | [List all projects](/api-reference/projects) |
-| `GET` | `/auth/check` | [Verify API key](/api-reference/auth) |
-
-## Response Format
-
-All responses are JSON. Successful responses include the requested data:
-
-```json
-{
-  "session_id": "550e8400-e29b-41d4-a716-446655440000",
-  "status": "created",
-  "phone_number": "+14085551234"
-}
-```
+| `POST` | `/sessions` | [Create a payment session](/api-reference/sessions/create) |
+| `GET` | `/sessions/:id` | [Get session details](/api-reference/sessions/get) |
+| `GET` | `/sessions?caller={phone}` | [Get session by caller](/api-reference/sessions/get-by-caller) |
+| `POST` | `/sessions/:id/cancel` | [Cancel a session](/api-reference/sessions/cancel) |
+| `GET` | `/projects` | [List all projects](/api-reference/projects/list) |
+| `GET` | `/auth/check` | [Verify API key](/api-reference/auth/check) |
 
 ## Error Handling
 

@@ -1,0 +1,165 @@
+---
+title: SMS Checkout
+description: "Collect payments via a secure checkout link"
+---
+
+Send customers a secure Stripe Checkout link instead of collecting payment over IVR.
+
+## How It Works
+
+<Steps>
+  <Step title="Create a session with channel: sms">
+    Your server calls `POST /v1/sessions` with `channel` set to `"sms"`. Maven creates a Stripe Checkout session on your connected account and returns a `checkout_url`.
+  </Step>
+  <Step title="Send the link to your customer">
+    Send the `checkout_url` to the customer via SMS, email, or any messaging channel. The link opens a Stripe-hosted checkout page.
+  </Step>
+  <Step title="Customer completes payment">
+    The customer enters their card details on the Stripe Checkout page. 3D Secure is handled automatically when required.
+  </Step>
+  <Step title="Webhook fires on completion">
+    Maven sends a `payment.success` or `payment.failed` webhook to your configured endpoint when the checkout completes or expires.
+  </Step>
+</Steps>
+
+## Create an SMS Session
+
+Set `channel` to `"sms"` when creating a session. The response includes a `checkout_url` instead of a `phone_number`.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.trymaven.com/v1/sessions \
+  -H "Authorization: Bearer sk_live_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project": "my-app",
+    "caller": "+14155551234",
+    "amount": 2500,
+    "mode": "charge",
+    "channel": "sms",
+    "description": "Order #12345",
+    "email": "jane@example.com",
+    "metadata": { "order_id": "12345" }
+  }'
+```
+
+```javascript Node.js
+const response = await fetch('https://api.trymaven.com/v1/sessions', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer sk_live_your_api_key',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    project: 'my-app',
+    caller: '+14155551234',
+    amount: 2500,
+    mode: 'charge',
+    channel: 'sms',
+    description: 'Order #12345',
+    email: 'jane@example.com',
+    metadata: { order_id: '12345' }
+  })
+});
+
+const session = await response.json();
+// Send session.checkout_url to the customer
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'https://api.trymaven.com/v1/sessions',
+    headers={'Authorization': 'Bearer sk_live_your_api_key'},
+    json={
+        'project': 'my-app',
+        'caller': '+14155551234',
+        'amount': 2500,
+        'mode': 'charge',
+        'channel': 'sms',
+        'description': 'Order #12345',
+        'email': 'jane@example.com',
+        'metadata': {'order_id': '12345'}
+    }
+)
+
+session = response.json()
+# Send session['checkout_url'] to the customer
+```
+
+</CodeGroup>
+
+### Response
+
+```json
+{
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "created",
+  "phone_number": null,
+  "checkout_url": "https://checkout.stripe.com/c/pay/cs_live_a1b2c3...",
+  "created_at": "2026-02-17T10:30:00Z"
+}
+```
+
+Note that `phone_number` is `null` for SMS sessions. The `checkout_url` is the payment entry point instead.
+
+## Status Lifecycle
+
+SMS sessions follow a different status lifecycle than voice sessions:
+
+```
+created --> sms-sent --> payment-success
+                    \--> payment-failed
+  \--> expired
+  \--> cancelled
+```
+
+| Status | Description |
+|--------|-------------|
+| `created` | Session created, checkout URL generated |
+| `sms-sent` | Stripe Checkout session is active and awaiting customer |
+| `payment-success` | Customer completed payment |
+| `payment-failed` | Payment failed or checkout expired |
+| `expired` | Session expired before checkout was initiated |
+| `cancelled` | Session was cancelled via API |
+
+## Voice vs SMS
+
+| | Voice | SMS |
+|---|---|---|
+| **Channel** | `voice` (default) | `sms` |
+| **Entry point** | IVR phone number (`phone_number`) | Stripe Checkout URL (`checkout_url`) |
+| **Card input** | Phone keypad (DTMF) | Web form |
+| **3D Secure** | Fallback via SMS link | Handled automatically by Stripe Checkout |
+| **Callback** | Transfer back to agent after payment | Not applicable |
+| **Statuses** | `created → collecting → processing → payment-success` | `created → sms-sent → payment-success` |
+
+## Tokenize Mode
+
+SMS checkout also supports `mode: "tokenize"` to save a card for later use without charging immediately. The flow is the same. Stripe Checkout collects the card details, and the `payment.tokenized` webhook includes the `payment_method_id`.
+
+```json
+{
+  "project": "my-app",
+  "caller": "+14155551234",
+  "amount": 0,
+  "mode": "tokenize",
+  "channel": "sms"
+}
+```
+
+## Tips
+
+<AccordionGroup>
+  <Accordion title="Send the link promptly">
+    Stripe Checkout sessions expire after 24 hours. Send the `checkout_url` to the customer as soon as you receive it.
+  </Accordion>
+  <Accordion title="Use webhooks for completion">
+    Since there's no call transfer with SMS checkout, [webhooks](/api-reference/webhooks/overview) are the primary way to know when a payment completes. You can also poll the [Get Session](/api-reference/sessions/get) endpoint.
+  </Accordion>
+  <Accordion title="Include an email for receipts">
+    Pass the `email` field when creating the session. If receipt delivery is enabled in your project settings, the customer will receive a receipt automatically.
+  </Accordion>
+</AccordionGroup>
