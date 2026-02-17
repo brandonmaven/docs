@@ -67,19 +67,18 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:support@trymaven.com"
+        "href": "mailto:founders@trymaven.com"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Get Started",
+      "label": "Dashboard",
       "href": "https://app.trymaven.com"
     }
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/trymaven",
-      "github": "https://github.com/brandonmaven",
+      "x": "https://x.com/mavenpayments",
       "linkedin": "https://linkedin.com/company/trymaven"
     }
   },
