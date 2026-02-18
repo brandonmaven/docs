@@ -99,30 +99,26 @@ print(session['phone_number'])  # IVR number for call transfer
 
 ## Step 4: Transfer the Call
 
-Transfer the customer to the `phone_number` returned in the session response. The customer enters their card details using the phone keypad (DTMF).
+Transfer the customer to the `phone_number` returned in the session response. The customer enters their card details using the phone keypad (DTMF). This works with any voice platform.
 
-- **SIP Transfer** (recommended) - Fastest, supports payment context headers on transfer back
-- **PSTN Transfer** - Cold transfer to the phone number, works with any provider
+## Step 5: Get the Payment Result
 
-See [How It Works](/get-started/how-it-works) for details on transfer methods and SIP headers.
-
-## Step 5: Poll for Payment Status
-
-Check the session status to know when payment completes:
+After the call transfers back, look up the result by the caller's phone number:
 
 ```javascript
 const res = await fetch(
-  `https://api.trymaven.com/v1/sessions/${session.session_id}`,
+  'https://api.trymaven.com/v1/sessions?caller=%2B14155551234',
   { headers: { 'Authorization': 'Bearer mvn_test_xxx' } }
 );
-const result = await res.json();
+const sessions = await res.json();
+const latest = sessions[0];
 
-if (result.is_terminal) {
-  console.log(result.status); // "payment-success" or "payment-failed"
-}
+console.log(latest.status); // "payment-success" or "payment-failed"
 ```
 
-For a full polling example, see [How It Works](/get-started/how-it-works#polling-for-status).
+You can also poll by session ID: `GET /v1/sessions/:id` until `is_terminal` is `true`.
+
+For detailed examples, see [How It Works](/get-started/how-it-works#get-payment-result).
 
 ## Test Cards
 

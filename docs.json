@@ -71,12 +71,6 @@
             "pages": [
               "api-reference/auth/check"
             ]
-          },
-          {
-            "group": "Webhooks",
-            "pages": [
-              "api-reference/webhooks/overview"
-            ]
           }
         ]
       }
@@ -85,8 +79,7 @@
   },
   "redirects": [
     { "source": "/api-reference/auth", "destination": "/api-reference/auth/check" },
-    { "source": "/api-reference/projects", "destination": "/api-reference/projects/list" },
-    { "source": "/api-reference/webhooks", "destination": "/api-reference/webhooks/overview" }
+    { "source": "/api-reference/projects", "destination": "/api-reference/projects/list" }
   ],
   "logo": {
     "light": "/logo/maven.png",

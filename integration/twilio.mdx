@@ -42,21 +42,21 @@ Use TwiML to transfer the customer to the Maven IVR number:
 </Response>
 ```
 
-For SIP transfer (recommended for getting payment context on the callback):
-
-```xml
-<Response>
-  <Dial>
-    <Sip>sip:+14085551234@your-provider.sip.twilio.com</Sip>
-  </Dial>
-</Response>
-```
-
 ## Get the Result
 
-After the call transfers back, you can read the payment result from:
+After the call transfers back, retrieve the payment result by the caller's phone number:
 
-- **SIP headers** (if using SIP transfer): `x_maven_status`, `x_maven_card_last4`, etc.
-- **Polling**: `GET /v1/sessions/:id` until `is_terminal` is `true`
+```javascript
+const res = await fetch(
+  'https://api.trymaven.com/v1/sessions?caller=%2B14155551234',
+  { headers: { 'Authorization': 'Bearer mvn_test_xxx' } }
+);
+const sessions = await res.json();
+const latest = sessions[0];
 
-See [How It Works](/get-started/how-it-works) for the full flow, SIP headers reference, and polling examples.
+console.log(latest.status); // "payment-success" or "payment-failed"
+```
+
+You can also poll by session ID: `GET /v1/sessions/:id` until `is_terminal` is `true`.
+
+See [How It Works](/get-started/how-it-works) for the full flow and detailed examples.
