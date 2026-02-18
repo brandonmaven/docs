@@ -1,56 +1,140 @@
 ---
 title: Vapi
-description: "Collect payments with Maven in your Vapi agent"
+description: "Step-by-step guide to collecting payments mid-call with Maven and Vapi"
 ---
 
-Collect payments mid-call in your Vapi voice agent using Maven.
+Collect payments mid-call by transferring your Vapi customer to Maven's IVR, then transferring them back when payment is complete.
 
-## Overview
+<Steps>
+  <Step title="Create a Session">
 
-1. Your Vapi agent decides to collect a payment
-2. Your server creates a Maven session via the API
-3. Use `transferCall` to transfer the customer to Maven's IVR
-4. The customer enters their card details by phone keypad
-5. Maven processes the payment and transfers the call back to your agent
+  When your Vapi agent needs to collect a payment, create a Maven session from your server. In practice, this happens inside a Vapi server URL handler or custom function tool. The response includes an IVR `phone_number` to transfer the customer to.
 
-## Create a Session
+  Set `callback` to the phone number where Maven should transfer the customer back after payment.
 
-When your agent needs to collect payment, call the Maven API from your server:
+  <CodeGroup>
 
-```bash
-curl -X POST https://api.trymaven.com/v1/sessions \
-  -H "Authorization: Bearer mvn_test_xxx" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "project": "my-app",
-    "caller": "+14155551234",
-    "amount": 2500,
-    "mode": "charge",
-    "callback": "+18005551234"
-  }'
-```
+  ```python Python
+  import requests
 
-## Transfer the Call
+  response = requests.post(
+      "https://api.trymaven.com/v1/sessions",
+      headers={"Authorization": "Bearer mvn_test_xxx"},
+      json={
+          "project": "my-app",
+          "caller": "+14155551234",
+          "amount": 2500,
+          "mode": "charge",
+          "callback": "+18005551234",
+          "description": "Order #12345",
+          "metadata": {"order_id": "12345"}
+      }
+  )
 
-Use Vapi's `transferCall` function to transfer the customer to the Maven IVR number returned in the session response.
+  session = response.json()
+  ivr_number = session["phone_number"]
+  ```
 
-The `callback` field in the session request tells Maven where to transfer the call back after payment completes.
+  ```bash cURL
+  curl -X POST https://api.trymaven.com/v1/sessions \
+    -H "Authorization: Bearer mvn_test_xxx" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "project": "my-app",
+      "caller": "+14155551234",
+      "amount": 2500,
+      "mode": "charge",
+      "callback": "+18005551234",
+      "description": "Order #12345",
+      "metadata": { "order_id": "12345" }
+    }'
+  ```
 
-## Get the Result
+  </CodeGroup>
 
-After the call transfers back, retrieve the payment result by the caller's phone number:
+  ```json Response
+  {
+    "session_id": "550e8400-e29b-41d4-a716-446655440000",
+    "status": "created",
+    "phone_number": "+14085551234",
+    "created_at": "2026-02-17T10:30:00Z"
+  }
+  ```
 
-```javascript
-const res = await fetch(
-  'https://api.trymaven.com/v1/sessions?caller=%2B14155551234',
-  { headers: { 'Authorization': 'Bearer mvn_test_xxx' } }
-);
-const sessions = await res.json();
-const latest = sessions[0];
+  </Step>
 
-console.log(latest.status); // "payment-success" or "payment-failed"
-```
+  <Step title="Transfer the Call">
 
-You can also poll by session ID: `GET /v1/sessions/:id` until `is_terminal` is `true`.
+  Use Vapi's `transferCall` tool to send the customer to the Maven IVR `phone_number` from Step 1. The customer will hear prompts and enter their card details using their phone keypad.
 
-See [How It Works](/get-started/how-it-works) for the full flow and detailed examples.
+  Add the `transferCall` tool to your Vapi assistant configuration:
+
+  ```json transferCall Tool
+  {
+    "type": "transferCall",
+    "destinations": [{
+      "type": "number",
+      "number": "+14085551234",
+      "message": "I'm going to transfer you now to securely collect your payment details."
+    }]
+  }
+  ```
+
+  Then instruct your agent's prompt to trigger the transfer after creating the session:
+
+  ```text Agent Prompt Example
+  When the customer is ready to pay, call the create-session function
+  to start a Maven payment session. Then use the transferCall tool to
+  transfer the customer to the phone number returned by the session.
+  ```
+
+  <Note>
+    The destination number comes from the session response (`phone_number`), not a hardcoded value. Your server-side function tool should return this number so the agent can use it in the transfer.
+  </Note>
+
+  </Step>
+
+  <Step title="Receive Callback">
+
+  If you set a `callback` number in Step 1, Maven automatically transfers the customer back to that number after payment completes. There is nothing to implement here.
+
+  Your callback number should point to a Vapi assistant phone number so the agent can continue the conversation after payment.
+
+  </Step>
+
+  <Step title="Get the Result">
+
+  After the customer transfers back, look up the payment result by the caller's phone number.
+
+  <CodeGroup>
+
+  ```python Python
+  import requests
+
+  response = requests.get(
+      "https://api.trymaven.com/v1/sessions",
+      params={"caller": "+14155551234"},
+      headers={"Authorization": "Bearer mvn_test_xxx"}
+  )
+
+  session = response.json()
+  print(session["status"])  # "payment-success" or "payment-failed"
+  ```
+
+  ```bash cURL
+  curl "https://api.trymaven.com/v1/sessions?caller=%2B14155551234" \
+    -H "Authorization: Bearer mvn_test_xxx"
+  ```
+
+  </CodeGroup>
+
+  You can also poll by session ID (`GET /v1/sessions/:id`) until `is_terminal` is `true`.
+
+  <Tip>
+    Use the `metadata` field to pass context between your agents. For example, store an order ID or conversation ID so your callback agent knows what the payment was for.
+  </Tip>
+
+  </Step>
+</Steps>
+
+See [How It Works](/get-started/how-it-works) for the full payment flow and session lifecycle.

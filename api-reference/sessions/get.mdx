@@ -90,6 +90,38 @@ Retrieve details for a specific session, including payment status, processor det
   </Expandable>
 </ResponseField>
 
+<ResponseField name="mode" type="string">
+  Payment mode: `charge` or `tokenize`.
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Charge description, if provided.
+</ResponseField>
+
+<ResponseField name="gateway" type="string">
+  Payment gateway (always `stripe`).
+</ResponseField>
+
+<ResponseField name="channel" type="string">
+  Payment channel (always `voice`).
+</ResponseField>
+
+<ResponseField name="callback" type="string">
+  Callback phone number, if provided.
+</ResponseField>
+
+<ResponseField name="memory" type="string">
+  Context shared with the receiving agent. `null` if not provided.
+</ResponseField>
+
+<ResponseField name="checkout_url" type="string">
+  Stripe Checkout URL for 3DS fallback. Usually `null`.
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  Custom key-value data.
+</ResponseField>
+
 <ResponseField name="completed_at" type="string">
   ISO 8601 timestamp of when the session reached a terminal state. `null` if still in progress.
 </ResponseField>
@@ -153,6 +185,7 @@ session = response.json()
   "customer_id": "cust_123",
   "gateway": "stripe",
   "callback": "{callback}",
+  "memory": null,
   "checkout_url": null,
   "metadata": {"order_id": "12345"},
   "processor": {
