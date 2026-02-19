@@ -30,10 +30,6 @@ Retrieve details for a specific session, including payment status, processor det
   Current session status (see table below)
 </ResponseField>
 
-<ResponseField name="is_terminal" type="boolean">
-  Whether the session has reached a final state (`payment-success`, `payment-failed`, `expired`, or `cancelled`). Useful for polling. Stop polling when `true`.
-</ResponseField>
-
 <ResponseField name="amount" type="number">
   Amount in cents
 </ResponseField>
@@ -98,24 +94,12 @@ Retrieve details for a specific session, including payment status, processor det
   Charge description, if provided.
 </ResponseField>
 
-<ResponseField name="gateway" type="string">
-  Payment gateway (always `stripe`).
-</ResponseField>
-
-<ResponseField name="channel" type="string">
-  Payment channel (always `voice`).
-</ResponseField>
-
 <ResponseField name="callback" type="string">
   Callback phone number, if provided.
 </ResponseField>
 
 <ResponseField name="memory" type="string">
   Context shared with the receiving agent. `null` if not provided.
-</ResponseField>
-
-<ResponseField name="checkout_url" type="string">
-  Stripe Checkout URL for 3DS fallback. Usually `null`.
 </ResponseField>
 
 <ResponseField name="metadata" type="object">
@@ -175,7 +159,6 @@ session = response.json()
   "project_slug": "my-app",
   "caller": "{caller}",
   "status": "payment-success",
-  "is_terminal": true,
   "amount": 2500,
   "currency": "USD",
   "mode": "charge",
@@ -183,10 +166,8 @@ session = response.json()
   "email": "customer@example.com",
   "full_name": "Jane Smith",
   "customer_id": "cust_123",
-  "gateway": "stripe",
   "callback": "{callback}",
   "memory": null,
-  "checkout_url": null,
   "metadata": {"order_id": "12345"},
   "processor": {
     "stripe_payment_intent_id": "pi_xxx",

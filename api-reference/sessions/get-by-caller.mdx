@@ -54,7 +54,6 @@ session = response.json()
   "project_slug": "my-app",
   "caller": "{caller}",
   "status": "payment-success",
-  "is_terminal": true,
   "amount": 2500,
   "currency": "USD",
   "mode": "charge",
@@ -62,10 +61,8 @@ session = response.json()
   "email": "customer@example.com",
   "full_name": "Jane Smith",
   "customer_id": "cust_123",
-  "gateway": "stripe",
   "callback": "{callback}",
   "memory": null,
-  "checkout_url": null,
   "metadata": {"order_id": "12345"},
   "processor": {
     "stripe_payment_intent_id": "pi_xxx",
