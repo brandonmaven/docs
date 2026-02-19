@@ -37,6 +37,12 @@
               "integration/twilio",
               "integration/livekit"
             ]
+          },
+          {
+            "group": "Voice",
+            "pages": [
+              "voice/elevenlabs"
+            ]
           }
         ]
       },
@@ -69,6 +75,42 @@
             "group": "Auth",
             "pages": [
               "api-reference/auth/check"
+            ]
+          },
+          {
+            "group": "Twilio",
+            "pages": [
+              "api-reference/twilio/set-context",
+              "api-reference/twilio/get-context"
+            ]
+          },
+          {
+            "group": "Vapi",
+            "pages": [
+              "api-reference/vapi/set-context",
+              "api-reference/vapi/get-context",
+              "api-reference/vapi/create-tools"
+            ]
+          },
+          {
+            "group": "Retell",
+            "pages": [
+              "api-reference/retell/set-context",
+              "api-reference/retell/get-context"
+            ]
+          },
+          {
+            "group": "Bland",
+            "pages": [
+              "api-reference/bland/set-context",
+              "api-reference/bland/get-context"
+            ]
+          },
+          {
+            "group": "LiveKit",
+            "pages": [
+              "api-reference/livekit/set-context",
+              "api-reference/livekit/get-context"
             ]
           }
         ]

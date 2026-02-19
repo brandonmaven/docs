@@ -3,14 +3,16 @@ title: Stripe
 description: "Connect Stripe to Maven for voice payments"
 ---
 
-Maven integrates with Stripe via OAuth Connect. Connecting your Stripe account takes less than a minute.
+Maven integrates with Stripe via OAuth Connect. You do not need to provide any Stripe API keys to Maven. The OAuth flow authorizes Maven to process payments on your behalf through your connected Stripe account.
 
 ## Setup
 
 1. Go to [Dashboard > Payments](https://app.trymaven.com/payments)
 2. Click **Connect Stripe**
-3. Authorize Maven to process payments on your Stripe account
-4. You're done. Payments will go directly to your connected account
+3. Complete the Stripe OAuth flow to authorize Maven
+4. You're done. Payments will go directly to your connected Stripe account
+
+No API keys, webhook secrets, or manual configuration needed. Maven handles all Stripe API calls through the secure OAuth connection.
 
 ## Test vs Live Mode
 
