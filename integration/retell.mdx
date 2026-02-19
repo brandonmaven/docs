@@ -9,7 +9,7 @@ Collect payments mid-call in your Retell voice agent using Maven.
 
 1. Your Retell agent decides to collect a payment
 2. Your server creates a Maven session via the API
-3. Use Retell's call transfer API to transfer the customer to Maven's IVR
+3. Use Retell's call transfer API to transfer the customer to Maven
 4. The customer enters their card details by phone keypad
 5. Maven processes the payment and transfers the call back
 
@@ -32,7 +32,7 @@ curl -X POST https://api.trymaven.com/v1/sessions \
 
 ## Transfer the Call
 
-Use Retell's call transfer API to transfer the customer to the Maven IVR `phone_number` returned in the session response.
+Use Retell's call transfer API to transfer the customer to the Maven `phone_number` returned in the session response.
 
 ## Get the Result
 

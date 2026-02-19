@@ -3,12 +3,12 @@ title: Vapi
 description: "Step-by-step guide to collecting payments mid-call with Maven and Vapi"
 ---
 
-Collect payments mid-call by transferring your Vapi customer to Maven's IVR, then transferring them back when payment is complete.
+Collect payments mid-call by transferring your Vapi customer to Maven, then transferring them back when payment is complete.
 
 <Steps>
   <Step title="Create a Session">
 
-  When your Vapi agent needs to collect a payment, create a Maven session from your server. In practice, this happens inside a Vapi server URL handler or custom function tool. The response includes an IVR `phone_number` to transfer the customer to.
+  When your Vapi agent needs to collect a payment, create a Maven session from your server. In practice, this happens inside a Vapi server URL handler or custom function tool. The response includes a `phone_number` to transfer the customer to.
 
   Set `callback` to the phone number where Maven should transfer the customer back after payment.
 
@@ -32,7 +32,7 @@ Collect payments mid-call by transferring your Vapi customer to Maven's IVR, the
   )
 
   session = response.json()
-  ivr_number = session["phone_number"]
+  maven_number = session["phone_number"]
   ```
 
   ```bash cURL
@@ -65,7 +65,7 @@ Collect payments mid-call by transferring your Vapi customer to Maven's IVR, the
 
   <Step title="Transfer the Call">
 
-  Use Vapi's `transferCall` tool to send the customer to the Maven IVR `phone_number` from Step 1. The customer will hear prompts and enter their card details using their phone keypad.
+  Use Vapi's `transferCall` tool to send the customer to the Maven `phone_number` from Step 1. The customer will hear prompts and enter their card details using their phone keypad.
 
   Add the `transferCall` tool to your Vapi assistant configuration:
 
@@ -91,6 +91,16 @@ Collect payments mid-call by transferring your Vapi customer to Maven's IVR, the
   <Note>
     The destination number comes from the session response (`phone_number`), not a hardcoded value. Your server-side function tool should return this number so the agent can use it in the transfer.
   </Note>
+
+  <Warning>
+    Maven matches incoming calls to payment sessions by the caller's phone number (the `From` on the inbound call). The caller ID during the transfer must be the customer's phone number - the same one you passed as `caller` when creating the session.
+
+    **Twilio numbers on Vapi** preserve the original caller ID during transfers. This is the recommended setup.
+
+    **Vapi-managed numbers** may use their own number as the caller ID, which will cause session matching to fail.
+
+    We are working on additional matching methods to support all phone number types.
+  </Warning>
 
   </Step>
 

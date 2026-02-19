@@ -7,13 +7,15 @@ description: "Understand the Maven voice payment flow"
 
 <Steps>
   <Step title="Create a session">
-    Your server calls `POST /v1/sessions` with the payment details. Maven returns an IVR phone number.
+    Your server calls `POST /v1/sessions` with the payment details. Maven returns a phone number.
   </Step>
   <Step title="Transfer the call">
-    Your voice agent transfers the customer to the Maven IVR number. The customer enters their card details using their phone keypad (DTMF).
+    Your voice agent transfers the customer to the Maven phone number. The customer enters their card details using their phone keypad (DTMF).
+
+    Maven matches the incoming call to the session using the caller's phone number. The transfer must preserve the original caller ID so it matches the `caller` value from Step 1.
   </Step>
   <Step title="Payment processes">
-    Maven tokenizes the card (PCI-compliant) and processes the charge on your connected Stripe account.
+    Maven tokenizes the card and processes the charge on your connected Stripe account.
   </Step>
   <Step title="Call transfers back">
     If you provided a `callback` number, Maven transfers the customer back to your agent after payment.
@@ -45,7 +47,7 @@ To have Maven transfer the customer back to your agent after payment, include a 
 
 ## Session Lifecycle
 
-Sessions expire after **10 minutes** if the customer doesn't call the IVR number. Creating a new session for the same phone number automatically cancels any previous active session.
+Sessions expire after **10 minutes** if the customer doesn't call the phone number. Creating a new session for the same phone number automatically cancels any previous active session.
 
 ```
 created --> collecting --> processing --> payment-success

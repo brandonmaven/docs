@@ -33,7 +33,7 @@ Create a new payment session. Sessions represent a single payment collection att
 ### Optional
 
 <ParamField body="input_mode" type="string" default="dtmf">
-  How the customer enters card info on IVR: `dtmf` (keypad) or `asr` (speech recognition). Only applies to `voice` channel.
+  How the customer enters card info during the call: `dtmf` (keypad) or `asr` (speech recognition). Only applies to `voice` channel.
 </ParamField>
 
 <ParamField body="email" type="string">
@@ -75,7 +75,7 @@ Create a new payment session. Sessions represent a single payment collection att
 </ResponseField>
 
 <ResponseField name="phone_number" type="string">
-  IVR phone number for the customer to call or be transferred to.
+  Maven phone number for the customer to call or be transferred to.
 </ResponseField>
 
 <ResponseField name="created_at" type="string">

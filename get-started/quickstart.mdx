@@ -63,7 +63,7 @@ const response = await fetch('https://api.trymaven.com/v1/sessions', {
 });
 
 const session = await response.json();
-console.log(session.phone_number); // IVR number for call transfer
+console.log(session.phone_number); // Maven number for call transfer
 ```
 
 ```python Python
@@ -81,7 +81,7 @@ response = requests.post(
 )
 
 session = response.json()
-print(session['phone_number'])  # IVR number for call transfer
+print(session['phone_number'])  # Maven number for call transfer
 ```
 
 </CodeGroup>

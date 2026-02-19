@@ -3,12 +3,12 @@ title: Twilio
 description: "Step-by-step guide to collecting payments mid-call with Maven and Twilio"
 ---
 
-Collect payments mid-call by transferring your Twilio customer to Maven's IVR, then transferring them back when payment is complete.
+Collect payments mid-call by transferring your Twilio customer to Maven, then transferring them back when payment is complete.
 
 <Steps>
   <Step title="Create a Session">
 
-  When your application needs to collect a payment, create a Maven session from your server. The response includes an IVR `phone_number` to transfer the customer to.
+  When your application needs to collect a payment, create a Maven session from your server. The response includes a `phone_number` to transfer the customer to.
 
   Set `callback` to the phone number where Maven should transfer the customer back after payment.
 
@@ -32,7 +32,7 @@ Collect payments mid-call by transferring your Twilio customer to Maven's IVR, t
   )
 
   session = response.json()
-  ivr_number = session["phone_number"]
+  maven_number = session["phone_number"]
   ```
 
   ```bash cURL
@@ -65,7 +65,7 @@ Collect payments mid-call by transferring your Twilio customer to Maven's IVR, t
 
   <Step title="Transfer the Call">
 
-  Use the `phone_number` from the session response to transfer the customer to Maven's IVR. The customer will hear prompts and enter their card details using their phone keypad.
+  Use the `phone_number` from the session response to transfer the customer to Maven. The customer will hear prompts and enter their card details using their phone keypad.
 
   <CodeGroup>
 
@@ -74,7 +74,7 @@ Collect payments mid-call by transferring your Twilio customer to Maven's IVR, t
 
   response = VoiceResponse()
   dial = Dial()
-  dial.number(ivr_number)  # phone_number from Step 1
+  dial.number(maven_number)  # phone_number from Step 1
   response.append(dial)
 
   print(str(response))

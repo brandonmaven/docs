@@ -3,7 +3,7 @@ title: SMS Checkout
 description: "Collect payments via a secure checkout link"
 ---
 
-Send customers a secure Stripe Checkout link instead of collecting payment over IVR.
+Send customers a secure Stripe Checkout link instead of collecting payment over the phone.
 
 ## How It Works
 
@@ -130,7 +130,7 @@ created --> sms-sent --> payment-success
 | | Voice | SMS |
 |---|---|---|
 | **Channel** | `voice` (default) | `sms` |
-| **Entry point** | IVR phone number (`phone_number`) | Stripe Checkout URL (`checkout_url`) |
+| **Entry point** | Maven phone number (`phone_number`) | Stripe Checkout URL (`checkout_url`) |
 | **Card input** | Phone keypad (DTMF) | Web form |
 | **3D Secure** | Fallback via SMS link | Handled automatically by Stripe Checkout |
 | **Callback** | Transfer back to agent after payment | Not applicable |

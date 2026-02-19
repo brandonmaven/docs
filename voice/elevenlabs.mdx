@@ -1,0 +1,42 @@
+---
+title: ElevenLabs
+description: "Use custom AI voices for payment collection calls"
+---
+
+Maven can use ElevenLabs voices for the payment agent instead of the default Twilio built-in voices. This gives you natural-sounding, customizable voices during payment collection calls.
+
+## How it works
+
+- **Without ElevenLabs**: Maven uses Twilio's built-in text-to-speech voices.
+- **With ElevenLabs**: Maven streams audio from ElevenLabs in real time during the call, producing higher-quality, more natural speech.
+
+## Organization setup
+
+Add your ElevenLabs API key in the dashboard to enable custom voices for all projects in your organization.
+
+1. Get your API key from the [ElevenLabs dashboard](https://elevenlabs.io) under **Profile + API key**
+2. In Maven, go to **Dashboard > Settings > Voice**
+3. Paste your ElevenLabs API key
+4. Click **Test Connection** to verify the key works
+
+Once connected, all projects in your organization will use ElevenLabs for text-to-speech. The default voice is **Rachel** (`21m00Tcm4TlvDq8ikWAM`).
+
+## Per-project voice
+
+You can set a custom Voice ID for each project to use a different voice.
+
+1. Go to **Dashboard > Projects > [Your Project] > Voice**
+2. Enter the ElevenLabs Voice ID
+3. Save
+
+### Finding your Voice ID
+
+In the [ElevenLabs Voice Library](https://elevenlabs.io/voice-library), click on any voice and copy the **Voice ID** from the voice details panel. You can also find Voice IDs under **Voices > My Voices** in the ElevenLabs dashboard.
+
+## Default behavior
+
+| Configuration | Voice used |
+|---------------|------------|
+| No ElevenLabs API key | Twilio built-in voices |
+| API key set, no project Voice ID | Rachel (`21m00Tcm4TlvDq8ikWAM`) |
+| API key set + project Voice ID | Your custom voice |
