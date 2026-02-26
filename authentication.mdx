@@ -3,7 +3,7 @@ title: Authentication
 description: API key formats, webhook tokens, and authentication methods
 ---
 
-All Maven API requests are authenticated with API keys passed as Bearer tokens. Integration webhooks use opaque tokens for additional security.
+All Maven API requests are authenticated with API keys passed as Bearer tokens.
 
 ## API Key Format
 
@@ -45,53 +45,6 @@ curl -X GET https://pciapi.trymaven.com/v1/auth/check \
 <Warning>
   Test mode places real calls. Use your own phone number as the caller during testing.
 </Warning>
-
-## Webhook Tokens
-
-Integration webhooks (VAPI, Retell) use **opaque tokens** instead of raw API keys in URLs. This prevents your API key from appearing in server logs, referrer headers, or webhook configuration UIs.
-
-```bash
-# Token-based URL (recommended)
-https://pciapi.trymaven.com/integrations/vapi/webhook?token=wht_abc123...
-
-# Legacy URL (still supported)
-https://pciapi.trymaven.com/integrations/vapi/webhook?api_key=mvn_test_xxx&project=my-store&mode=charge&gateway=stripe
-```
-
-Each token encodes your API key, app, gateway, and payment mode. Tokens are created automatically when you set up integrations through the dashboard.
-
-### Creating Tokens via API
-
-```bash
-curl -X POST https://pciapi.trymaven.com/integrations/webhook-tokens \
-  -H "Authorization: Bearer <clerk-jwt>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "api_key": "mvn_test_xxx",
-    "project_slug": "my-store",
-    "gateway": "stripe",
-    "mode": "charge",
-    "integration": "vapi"
-  }'
-```
-
-```json Response
-{
-  "token": "wht_abc123...",
-  "webhook_url": "https://pciapi.trymaven.com/integrations/vapi/webhook?token=wht_abc123..."
-}
-```
-
-## Integration Auth
-
-VAPI and Retell webhooks authenticate via query parameters because these platforms don't support custom Authorization headers:
-
-```
-POST /integrations/vapi/webhook?token=wht_abc123...
-POST /integrations/retell/webhook?token=wht_abc123...
-```
-
-Standard REST API endpoints use Bearer tokens in the `Authorization` header.
 
 ## Key Management
 
