@@ -1,162 +1,154 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
+  "theme": "palm",
   "name": "Maven",
-  "colors": {
-    "primary": "#8B5CF6",
-    "light": "#A78BFA",
-    "dark": "#7C3AED"
+  "logo": {
+    "light": "/logo/maven.png",
+    "dark": "/logo/maven.png"
   },
-  "favicon": "/favicon.ico",
+  "favicon": "/favicon.png",
+  "colors": {
+    "primary": "#6366F1",
+    "light": "#818CF8",
+    "dark": "#4F46E5"
+  },
+  "fonts": {
+    "heading": {
+      "family": "Inter",
+      "weight": 600
+    },
+    "body": {
+      "family": "Inter",
+      "weight": 400
+    }
+  },
+  "background": {
+    "decoration": "grid"
+  },
+  "styling": {
+    "eyebrows": "breadcrumbs",
+    "codeblocks": "dark"
+  },
+  "icons": {
+    "library": "lucide"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Dashboard",
+        "href": "https://prod.trymaven.com"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Get API Key",
+      "href": "https://prod.trymaven.com"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
+        "icon": "book-open",
         "groups": [
           {
-            "group": "Get Started",
+            "group": "Getting Started",
             "pages": [
-              "get-started/introduction",
-              "get-started/quickstart",
-              "get-started/how-it-works",
-              "get-started/authentication"
+              "introduction",
+              "quickstart",
+              "authentication",
+              "integrations/webhooks",
+              "voice-settings"
             ]
           },
           {
-            "group": "Payment Processors",
+            "group": "Voice Providers",
             "pages": [
-              "get-started/stripe",
-              "get-started/braintree"
+              "integrations/vapi-integration",
+              "integrations/retell-integration"
             ]
           },
           {
-            "group": "Integrations",
+            "group": "Payment Gateways",
             "pages": [
-              "integration/vapi",
-              "integration/retell",
-              "integration/twilio",
-              "integration/livekit"
-            ]
-          },
-          {
-            "group": "Voice",
-            "pages": [
-              "voice/agent-mode",
-              "voice/elevenlabs"
+              "integrations/stripe-connect",
+              "integrations/authorizenet-setup",
+              "integrations/braintree-setup"
             ]
           }
         ]
       },
       {
         "tab": "API Reference",
+        "icon": "square-terminal",
         "groups": [
           {
-            "group": "API Reference",
+            "group": "Overview",
             "pages": [
-              "api-reference/overview",
-              "api-reference/errors"
-            ]
-          },
-          {
-            "group": "Sessions",
-            "pages": [
-              "api-reference/sessions/create",
-              "api-reference/sessions/get",
-              "api-reference/sessions/get-by-caller",
-              "api-reference/sessions/cancel"
-            ]
-          },
-          {
-            "group": "Projects",
-            "pages": [
-              "api-reference/projects/list"
+              "api-reference/overview"
             ]
           },
           {
             "group": "Auth",
+            "openapi": "openapi.json",
             "pages": [
-              "api-reference/auth/check"
+              "GET /v1/auth/check"
             ]
           },
           {
-            "group": "Twilio",
+            "group": "Sessions",
+            "openapi": "openapi.json",
             "pages": [
-              "api-reference/twilio/set-context",
-              "api-reference/twilio/get-context"
+              "POST /v1/sessions",
+              "GET /v1/sessions",
+              "GET /v1/sessions/{session_id}",
+              "POST /v1/sessions/{session_id}/cancel"
             ]
           },
           {
-            "group": "Vapi",
+            "group": "Apps",
+            "openapi": "openapi.json",
             "pages": [
-              "api-reference/vapi/set-context",
-              "api-reference/vapi/get-context",
-              "api-reference/vapi/create-tools"
+              "GET /v1/projects"
             ]
           },
           {
-            "group": "Retell",
+            "group": "Integrations",
+            "openapi": "openapi.json",
             "pages": [
-              "api-reference/retell/set-context",
-              "api-reference/retell/get-context"
+              "POST /integrations/vapi/webhook",
+              "POST /integrations/retell/webhook"
             ]
           },
           {
-            "group": "Bland",
+            "group": "Health",
+            "openapi": "openapi.json",
             "pages": [
-              "api-reference/bland/set-context",
-              "api-reference/bland/get-context"
-            ]
-          },
-          {
-            "group": "LiveKit",
-            "pages": [
-              "api-reference/livekit/set-context",
-              "api-reference/livekit/get-context"
+              "GET /health"
             ]
           }
         ]
       }
-    ],
-    "global": {}
+    ]
   },
-  "redirects": [
-    { "source": "/api-reference/auth", "destination": "/api-reference/auth/check" },
-    { "source": "/api-reference/projects", "destination": "/api-reference/projects/list" }
-  ],
-  "logo": {
-    "light": "/logo/maven.png",
-    "dark": "/logo/maven.png",
-    "href": "https://trymaven.com"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:founders@trymaven.com"
+  "api": {
+    "mdx": {
+      "server": "https://pciapi.trymaven.com",
+      "auth": {
+        "method": "bearer"
       }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://app.trymaven.com"
+    },
+    "playground": {
+      "display": "interactive"
     }
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mavenpayments",
-      "linkedin": "https://linkedin.com/company/trymaven"
+      "website": "https://trymaven.com",
+      "github": "https://github.com/mavenagi"
     }
   },
-  "metadata": {
-    "og:site_name": "Maven Docs",
-    "og:description": "Collect payments over the phone with AI voice agents",
-    "twitter:site": "@trymaven"
-  },
-  "seo": {
-    "indexHiddenPages": false
-  },
   "feedback": {
-    "thumbsRating": true,
-    "suggestEdit": true
+    "thumbsRating": true
   }
 }
