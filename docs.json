@@ -113,14 +113,6 @@
             ]
           },
           {
-            "group": "Integrations",
-            "openapi": "openapi.json",
-            "pages": [
-              "POST /integrations/vapi/webhook",
-              "POST /integrations/retell/webhook"
-            ]
-          },
-          {
             "group": "Health",
             "openapi": "openapi.json",
             "pages": [
