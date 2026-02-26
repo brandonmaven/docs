@@ -5,7 +5,7 @@ description: Set up Maven as a payment collection tool for your Retell AI agent
 
 # Retell Integration
 
-Maven integrates with [Retell AI](https://retellai.com) voice agents. When your agent needs to collect a payment, it calls the `collect_payment` custom function, Maven creates a session, and the caller is transferred to Maven's IVR for secure card collection.
+Maven integrates with [Retell AI](https://retellai.com) voice agents. When your agent needs to collect a payment, it calls the `collect_payment` custom function, Maven creates a session, and the caller is transferred to Maven's secure payment line for card collection.
 
 ## How It Works
 
@@ -13,7 +13,7 @@ Maven integrates with [Retell AI](https://retellai.com) voice agents. When your 
 2. Agent calls the `collect_payment` custom function with amount and caller info
 3. Retell sends a POST to Maven's webhook endpoint
 4. Maven creates a session and returns a transfer phone number
-5. Agent transfers the caller to Maven's IVR
+5. Agent transfers the caller to Maven's secure payment line
 6. Maven's AI agent guides the customer through card collection
 7. Maven processes the payment
 8. Caller is transferred back to your agent (if `callback` is provided)
@@ -122,7 +122,7 @@ The marketplace handles tool creation and webhook URL configuration automaticall
 
 ## Phone Number Requirements
 
-Maven matches incoming IVR calls to sessions using the customer's phone number. When configuring the transfer in Retell, the call to Maven's IVR must preserve the **customer's real caller ID**.
+Maven matches incoming calls to sessions using the customer's phone number. When configuring the transfer in Retell, the call must preserve the **customer's real caller ID**.
 
 <Warning>
   If the transfer shows your Retell agent's phone number instead of the customer's number, Maven won't be able to match the call to the session.
@@ -167,7 +167,7 @@ Maven extracts `caller` from `args.caller` first, falling back to `call.from_num
 1. Use a **test** API key (`mvn_test_xxx`)
 2. Create a test call with your Retell agent
 3. Trigger payment collection
-4. When transferred to the IVR, use test card numbers:
+4. When transferred to the payment line, use test card numbers:
    - Speak "4242 4242 4242 4242" for a successful Visa charge
    - Any future expiry date and any 3-digit CVV
 5. Verify the session shows `payment-success`

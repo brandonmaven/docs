@@ -5,7 +5,7 @@ description: Set up Maven as a payment collection tool for your VAPI voice AI ag
 
 # VAPI Integration
 
-Maven integrates natively with [VAPI](https://vapi.ai) voice AI agents. When your agent needs to collect a payment, it triggers a tool call that creates a Maven session and transfers the caller to Maven's IVR for secure card collection.
+Maven integrates natively with [VAPI](https://vapi.ai) voice AI agents. When your agent needs to collect a payment, it triggers a tool call that creates a Maven session and transfers the caller to Maven's secure payment line for card collection.
 
 ## How It Works
 
@@ -13,7 +13,7 @@ Maven integrates natively with [VAPI](https://vapi.ai) voice AI agents. When you
 2. Agent determines payment is needed and calls the `collect_payment` tool
 3. VAPI sends a webhook to Maven's endpoint with the payment details
 4. Maven creates a session and returns a transfer phone number
-5. VAPI transfers the caller to Maven's IVR
+5. VAPI transfers the caller to Maven's secure payment line
 6. Maven's AI agent guides the customer through card collection
 7. Maven processes the payment
 8. Caller is transferred back to your agent (if `callback` is configured)
@@ -35,7 +35,7 @@ The fastest way. Maven creates the VAPI tools in your account automatically.
 
 Maven creates two tools in your VAPI account:
 - **collect_payment** — Function tool that creates a payment session
-- **transfer_to_payment** — TransferCall tool that transfers to Maven's IVR
+- **transfer_to_payment** — TransferCall tool that transfers to Maven's secure payment line
 
 The webhook URL uses an [opaque token](/authentication#webhook-tokens) instead of your raw API key.
 
@@ -111,7 +111,7 @@ https://pciapi.trymaven.com/integrations/vapi/webhook?token=YOUR_TOKEN
 
 ### Step 3: Configure Transfer
 
-The webhook response includes a `transfer_number`. Configure a TransferCall tool in VAPI to transfer the caller to Maven's IVR number.
+The webhook response includes a `transfer_number`. Configure a TransferCall tool in VAPI to transfer the caller to Maven's secure payment line.
 
   </Tab>
 </Tabs>
@@ -155,7 +155,7 @@ When the customer needs to make a payment:
 
 ## Phone Number Requirements
 
-Maven matches incoming IVR calls to sessions using the customer's phone number. For the transfer to work, Maven must see the **customer's real caller ID** — not your agent's phone number.
+Maven matches incoming calls to sessions using the customer's phone number. For the transfer to work, Maven must see the **customer's real caller ID** — not your agent's phone number.
 
 <Warning>
   If your VAPI assistant uses a **VAPI-owned phone number**, the transfer to Maven will show the VAPI number as the caller instead of the customer's real number. Maven won't be able to match the call to the session.
@@ -181,13 +181,13 @@ Pass a `callback` number in the tool parameters to have Maven transfer the calle
 
 1. Use a **test** API key (`mvn_test_xxx`) during development
 2. Use your own phone number as the customer number
-3. When transferred to the IVR, use test card numbers:
+3. When transferred to the payment line, use test card numbers:
    - `4242 4242 4242 4242` (Visa, succeeds)
    - `4000 0000 0000 0002` (Visa, declined)
 4. Check session status in the Maven Dashboard or via the API
 
 <Warning>
-  Even in test mode, the IVR places real calls. Use your own phone number during testing.
+  Even in test mode, real calls are placed. Use your own phone number during testing.
 </Warning>
 
 ## Error Handling

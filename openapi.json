@@ -76,7 +76,7 @@
     "/v1/sessions": {
       "post": {
         "summary": "Create Session",
-        "description": "Create a new payment session. Returns the IVR phone number to transfer the caller to for secure card collection.",
+        "description": "Create a new payment session. Returns the Phone number to transfer the caller to for secure card collection.",
         "operationId": "create_session",
         "tags": ["Sessions"],
         "security": [{ "HTTPBearer": [] }],
@@ -225,7 +225,7 @@
     "/integrations/vapi/webhook": {
       "post": {
         "summary": "VAPI Webhook",
-        "description": "Handle VAPI server URL webhook events. Authenticates via query parameters (token or api_key). Creates a payment session when VAPI triggers a collect_payment tool call, and returns the IVR transfer number.",
+        "description": "Handle VAPI server URL webhook events. Authenticates via query parameters (token or api_key). Creates a payment session when VAPI triggers a collect_payment tool call, and returns the transfer number.",
         "operationId": "vapi_webhook",
         "tags": ["Integrations"],
         "parameters": [
@@ -314,7 +314,7 @@
     "/integrations/retell/webhook": {
       "post": {
         "summary": "Retell Webhook",
-        "description": "Handle Retell AI custom function calls. Authenticates via query parameters (token or api_key). Creates a payment session and returns the IVR transfer number.",
+        "description": "Handle Retell AI custom function calls. Authenticates via query parameters (token or api_key). Creates a payment session and returns the transfer number.",
         "operationId": "retell_webhook",
         "tags": ["Integrations"],
         "parameters": [
@@ -442,7 +442,7 @@
         "properties": {
           "session_id": { "type": "string", "description": "Session UUID" },
           "status": { "type": "string", "description": "Initial session status" },
-          "phone_number": { "type": "string", "description": "IVR phone number to transfer the caller to" },
+          "phone_number": { "type": "string", "description": "Phone number to transfer the caller to" },
           "created_at": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
         }
       },
@@ -503,7 +503,7 @@
         "description": "Response from VAPI/Retell webhook after creating a payment session",
         "properties": {
           "session_id": { "type": "string", "description": "Session UUID" },
-          "transfer_number": { "type": "string", "description": "IVR phone number to transfer the caller to" },
+          "transfer_number": { "type": "string", "description": "Phone number to transfer the caller to" },
           "message": { "type": "string", "description": "Human-readable instruction" }
         }
       }

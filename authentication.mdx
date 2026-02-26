@@ -39,11 +39,11 @@ curl -X GET https://pciapi.trymaven.com/v1/auth/check \
 | Gateway credentials | Test/sandbox | Production |
 | Real charges | No | Yes |
 | Card validation | Full | Full |
-| IVR calls | Real calls placed | Real calls placed |
+| Voice calls | Real calls placed | Real calls placed |
 | Rate limits | Same as live | 20 req/min per endpoint |
 
 <Warning>
-  Test mode uses real IVR infrastructure. Use your own phone number as the caller during testing.
+  Test mode places real calls. Use your own phone number as the caller during testing.
 </Warning>
 
 ## Webhook Tokens
