@@ -1,0 +1,92 @@
+---
+title: Authorize.net Setup
+description: Connect your Authorize.net account to Maven
+---
+
+# Connecting Authorize.net
+
+Maven connects to Authorize.net using your API Login ID and Transaction Key. These credentials allow Maven to create charges and customer profiles on your behalf.
+
+## Prerequisites
+
+- An Authorize.net merchant account
+- API Login ID and Transaction Key from your Authorize.net account
+- A Maven app
+
+## Getting Your Credentials
+
+<Steps>
+  <Step title="Log in to Authorize.net">
+    Go to [Authorize.net Merchant Interface](https://account.authorize.net/) and log in.
+  </Step>
+  <Step title="Navigate to API Credentials">
+    Go to **Account > Settings > API Credentials & Keys**.
+  </Step>
+  <Step title="Copy API Login ID">
+    Your **API Login ID** is displayed at the top of the page. Copy it.
+  </Step>
+  <Step title="Generate Transaction Key">
+    Under **Create New Key(s)**, select **New Transaction Key** and click **Submit**. Copy the generated key — it won't be shown again.
+  </Step>
+</Steps>
+
+## Connecting in Maven
+
+<Steps>
+  <Step title="Go to Payments">
+    In the [Maven Dashboard](https://prod.trymaven.com), navigate to your app and click the **Payments** tab.
+  </Step>
+  <Step title="Click Connect Authorize.net">
+    Click the Authorize.net card and enter your credentials.
+  </Step>
+  <Step title="Enter Credentials">
+    - **API Login ID**: Your Authorize.net API Login ID
+    - **Transaction Key**: Your Authorize.net Transaction Key
+  </Step>
+  <Step title="Save">
+    Click **Connect**. Maven will validate the credentials and save them.
+  </Step>
+</Steps>
+
+## Sandbox Testing
+
+For testing, use [Authorize.net Sandbox](https://sandbox.authorize.net/) credentials. Create a sandbox account at [developer.authorize.net](https://developer.authorize.net/).
+
+Use sandbox credentials with `mvn_test_` API keys to test without real charges.
+
+## Processor Response Fields
+
+### Charge Mode
+
+| Field | Description |
+|-------|-------------|
+| `authnet_transaction_id` | Transaction ID |
+| `authnet_auth_code` | Authorization code |
+| `card_brand` | Card brand |
+| `card_last4` | Last 4 digits |
+
+### Tokenize Mode (CIM)
+
+| Field | Description |
+|-------|-------------|
+| `authnet_customer_profile_id` | CIM Customer Profile ID |
+| `authnet_payment_profile_id` | CIM Payment Profile ID |
+| `card_brand` | Card brand |
+| `card_last4` | Last 4 digits |
+
+## Using Tokenized Cards
+
+After tokenizing, use the CIM profile IDs to create transactions via the Authorize.net API:
+
+```python
+# Create a charge using CIM profile
+from authorizenet import apicontractsv1 as api
+
+transaction = api.createTransactionRequest()
+transaction.transactionRequest.transactionType = "authCaptureTransaction"
+transaction.transactionRequest.amount = "49.99"
+transaction.transactionRequest.profile = api.customerProfilePaymentType()
+transaction.transactionRequest.profile.customerProfileId = "123456789"  # from authnet_customer_profile_id
+transaction.transactionRequest.profile.paymentProfile = api.paymentProfile()
+transaction.transactionRequest.profile.paymentProfile.paymentProfileId = "987654321"  # from authnet_payment_profile_id
+```

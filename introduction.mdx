@@ -1,0 +1,63 @@
+---
+title: Introduction
+description: Collect credit card payments securely over phone calls with Maven
+---
+
+Maven is voice payment infrastructure. Collect credit card payments securely over phone calls using PCI-compliant tokenization and your preferred payment gateway.
+
+<CardGroup cols={3}>
+  <Card title="Voice Payments" icon="phone">
+    Collect card details via natural speech over IVR calls.
+  </Card>
+  <Card title="PCI Compliant" icon="shield-check">
+    Card data tokenized in-memory through VGS. Never touches your servers.
+  </Card>
+  <Card title="Multiple Gateways" icon="credit-card">
+    Process payments through Stripe, Authorize.net, or Braintree.
+  </Card>
+</CardGroup>
+
+## How It Works
+
+<Steps>
+  <Step title="Create a session">
+    Your server calls the Maven API with the customer's phone number, amount, and payment mode.
+  </Step>
+  <Step title="Transfer the caller">
+    Your voice AI agent transfers the caller to Maven's IVR number.
+  </Step>
+  <Step title="Card details collected">
+    Maven's voice agent guides the caller through reading their card number, expiry, and CVV.
+  </Step>
+  <Step title="Payment processed">
+    Card details are tokenized through VGS and the payment is processed through your gateway.
+  </Step>
+  <Step title="Get the result">
+    Receive a webhook with the charge ID, last 4 digits, and more.
+  </Step>
+</Steps>
+
+## Supported Gateways
+
+| Gateway | Charge | Tokenize |
+|---------|--------|----------|
+| **Stripe** | Yes | Yes |
+| **Authorize.net** | Yes | Yes |
+| **Braintree** | Yes | Yes |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Set up your dashboard and collect your first payment.
+  </Card>
+  <Card title="VAPI Integration" icon="bot" href="/integrations/vapi-integration">
+    Set up Maven with your VAPI voice AI agent.
+  </Card>
+  <Card title="Retell Integration" icon="phone" href="/integrations/retell-integration">
+    Set up Maven with your Retell AI agent.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/overview">
+    Explore the full API with interactive examples.
+  </Card>
+</CardGroup>

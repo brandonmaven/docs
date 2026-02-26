@@ -1,0 +1,512 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Maven API",
+    "description": "Maven is a voice payment infrastructure API. Collect credit card payments securely over phone calls using speech recognition and PCI-compliant tokenization.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Maven Support",
+      "url": "https://trymaven.com",
+      "email": "support@trymaven.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://pciapi.trymaven.com",
+      "description": "Production"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Health check endpoint with service connectivity verification.",
+        "operationId": "health_check",
+        "tags": ["Health"],
+        "responses": {
+          "200": {
+            "description": "Service health status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["ok", "degraded"],
+                      "description": "Overall health status"
+                    },
+                    "services": {
+                      "type": "object",
+                      "properties": {
+                        "supabase": { "type": "boolean" },
+                        "stripe": { "type": "boolean" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/check": {
+      "get": {
+        "summary": "Check Auth",
+        "description": "Check if your API key is valid. Use this to verify your API key is working correctly.",
+        "operationId": "check_auth",
+        "tags": ["Auth"],
+        "security": [{ "HTTPBearer": [] }],
+        "responses": {
+          "200": {
+            "description": "Authentication status",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthCheckResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid API key"
+          }
+        }
+      }
+    },
+    "/v1/sessions": {
+      "post": {
+        "summary": "Create Session",
+        "description": "Create a new payment session. Returns the IVR phone number to transfer the caller to for secure card collection.",
+        "operationId": "create_session",
+        "tags": ["Sessions"],
+        "security": [{ "HTTPBearer": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SessionCreate" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Session created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SessionCreateResponse" }
+              }
+            }
+          },
+          "401": { "description": "Invalid API key" },
+          "422": { "description": "Validation error" }
+        }
+      },
+      "get": {
+        "summary": "Get Session by Caller",
+        "description": "Get the most recent session for a phone number. Returns the most recent active session, or falls back to the latest terminal session.",
+        "operationId": "get_session_by_caller",
+        "tags": ["Sessions"],
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "caller",
+            "in": "query",
+            "required": true,
+            "description": "Phone number in E.164 format (e.g. +14155551234)",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SessionGetResponse" }
+              }
+            }
+          },
+          "401": { "description": "Invalid API key" },
+          "404": { "description": "No session found for caller" }
+        }
+      }
+    },
+    "/v1/sessions/{session_id}": {
+      "get": {
+        "summary": "Get Session",
+        "description": "Get session details by ID. Returns full session details including status, payment info, and processor details.",
+        "operationId": "get_session",
+        "tags": ["Sessions"],
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "description": "Session UUID",
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SessionGetResponse" }
+              }
+            }
+          },
+          "401": { "description": "Invalid API key" },
+          "404": { "description": "Session not found" }
+        }
+      }
+    },
+    "/v1/sessions/{session_id}/cancel": {
+      "post": {
+        "summary": "Cancel Session",
+        "description": "Cancel a pending session. Only sessions in active (non-terminal) status can be cancelled.",
+        "operationId": "cancel_session",
+        "tags": ["Sessions"],
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "description": "Session UUID",
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Session cancelled" },
+          "401": { "description": "Invalid API key" },
+          "404": { "description": "Session not found" },
+          "409": { "description": "Session already in terminal state" }
+        }
+      }
+    },
+    "/v1/projects": {
+      "get": {
+        "summary": "List Projects",
+        "description": "List all projects for this organization.",
+        "operationId": "list_projects",
+        "tags": ["Projects"],
+        "security": [{ "HTTPBearer": [] }],
+        "responses": {
+          "200": {
+            "description": "Project list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid" },
+                          "name": { "type": "string" },
+                          "slug": { "type": "string" },
+                          "created_at": { "type": "string", "format": "date-time" }
+                        }
+                      }
+                    },
+                    "org_id": { "type": "string" },
+                    "mode": { "type": "string", "enum": ["test", "live"] }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Invalid API key" }
+        }
+      }
+    },
+    "/integrations/vapi/webhook": {
+      "post": {
+        "summary": "VAPI Webhook",
+        "description": "Handle VAPI server URL webhook events. Authenticates via query parameters (token or api_key). Creates a payment session when VAPI triggers a collect_payment tool call, and returns the IVR transfer number.",
+        "operationId": "vapi_webhook",
+        "tags": ["Integrations"],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": false,
+            "description": "Opaque webhook token (recommended, encodes api_key + project + mode + gateway)",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "api_key",
+            "in": "query",
+            "required": false,
+            "description": "Maven API key (legacy, use token instead)",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "project",
+            "in": "query",
+            "required": false,
+            "description": "Project slug or UUID (required with api_key)",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "required": false,
+            "description": "Payment mode (default: charge)",
+            "schema": { "type": "string", "enum": ["charge", "tokenize"], "default": "charge" }
+          },
+          {
+            "name": "gateway",
+            "in": "query",
+            "required": false,
+            "description": "Payment gateway",
+            "schema": { "type": "string", "enum": ["stripe", "authorizenet", "braintree"] }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "VAPI webhook payload (function-call event or API Request tool body)",
+                "properties": {
+                  "type": { "type": "string", "description": "Event type (e.g. function-call)" },
+                  "functionCall": {
+                    "type": "object",
+                    "properties": {
+                      "parameters": {
+                        "type": "object",
+                        "properties": {
+                          "amount": { "type": "number", "description": "Payment amount" },
+                          "caller": { "type": "string", "description": "Customer phone in E.164" },
+                          "description": { "type": "string", "description": "Charge description" },
+                          "callback": { "type": "string", "description": "Transfer-back phone number" }
+                        }
+                      }
+                    }
+                  },
+                  "amount": { "type": "number", "description": "Payment amount (API Request tool format)" },
+                  "caller": { "type": "string", "description": "Customer phone (API Request tool format)" },
+                  "description": { "type": "string", "description": "Charge description (API Request tool format)" },
+                  "callback": { "type": "string", "description": "Transfer-back number (API Request tool format)" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Payment session created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/WebhookResponse" }
+              }
+            }
+          },
+          "401": { "description": "Invalid or missing API key" },
+          "400": { "description": "Missing project or invalid mode/gateway" }
+        }
+      }
+    },
+    "/integrations/retell/webhook": {
+      "post": {
+        "summary": "Retell Webhook",
+        "description": "Handle Retell AI custom function calls. Authenticates via query parameters (token or api_key). Creates a payment session and returns the IVR transfer number.",
+        "operationId": "retell_webhook",
+        "tags": ["Integrations"],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": false,
+            "description": "Opaque webhook token (recommended, encodes api_key + project + mode + gateway)",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "api_key",
+            "in": "query",
+            "required": false,
+            "description": "Maven API key (legacy, use token instead)",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "project",
+            "in": "query",
+            "required": false,
+            "description": "Project slug or UUID (required with api_key)",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "required": false,
+            "description": "Payment mode (default: charge)",
+            "schema": { "type": "string", "enum": ["charge", "tokenize"], "default": "charge" }
+          },
+          {
+            "name": "gateway",
+            "in": "query",
+            "required": false,
+            "description": "Payment gateway",
+            "schema": { "type": "string", "enum": ["stripe", "authorizenet", "braintree"] }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "Retell custom function call payload",
+                "properties": {
+                  "name": { "type": "string", "description": "Function name (e.g. collect_payment)" },
+                  "args": {
+                    "type": "object",
+                    "description": "Function arguments",
+                    "properties": {
+                      "amount": { "type": "number", "description": "Payment amount in dollars (e.g. 150.00)" },
+                      "caller": { "type": "string", "description": "Customer phone in E.164 format" },
+                      "description": { "type": "string", "description": "Charge description" },
+                      "callback": { "type": "string", "description": "Transfer-back phone number" },
+                      "context": { "type": "object", "description": "Arbitrary context metadata" }
+                    }
+                  },
+                  "call": {
+                    "type": "object",
+                    "description": "Retell call information",
+                    "properties": {
+                      "call_id": { "type": "string", "description": "Retell call ID" },
+                      "from_number": { "type": "string", "description": "Caller's phone number" },
+                      "metadata": { "type": "object", "description": "Call metadata" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Payment session created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/WebhookResponse" }
+              }
+            }
+          },
+          "401": { "description": "Invalid or missing API key" },
+          "400": { "description": "Missing project or invalid mode/gateway" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "API Key in format: mvn_test_xxx or mvn_live_xxx"
+      }
+    },
+    "schemas": {
+      "AuthCheckResponse": {
+        "type": "object",
+        "required": ["authenticated", "org_id", "mode", "message"],
+        "properties": {
+          "authenticated": { "type": "boolean", "description": "Whether the key is valid" },
+          "org_id": { "type": "string", "description": "Organization ID" },
+          "mode": { "type": "string", "enum": ["test", "live"], "description": "API key mode" },
+          "message": { "type": "string", "description": "Human-readable status message" }
+        }
+      },
+      "SessionCreate": {
+        "type": "object",
+        "required": ["project", "caller", "amount", "mode", "gateway"],
+        "properties": {
+          "project": { "type": "string", "description": "Project identifier (UUID or slug)" },
+          "caller": { "type": "string", "description": "Phone number in E.164 format (e.g. +14155551234)" },
+          "amount": { "type": "number", "minimum": 0, "description": "Amount to charge (must be > 0 for charge mode, can be 0 for tokenize)" },
+          "mode": { "type": "string", "enum": ["charge", "tokenize"], "description": "Payment mode" },
+          "gateway": { "type": "string", "enum": ["stripe", "authorizenet", "braintree"], "description": "Payment gateway" },
+          "description": { "type": "string", "maxLength": 500, "description": "Charge description shown to customer" },
+          "callback": { "type": "string", "description": "Callback phone number for transfer-back after payment" },
+          "context": { "type": "object", "description": "Arbitrary context passed back on transfer and webhooks" }
+        }
+      },
+      "SessionCreateResponse": {
+        "type": "object",
+        "required": ["session_id", "status", "created_at"],
+        "properties": {
+          "session_id": { "type": "string", "description": "Session UUID" },
+          "status": { "type": "string", "description": "Initial session status" },
+          "phone_number": { "type": "string", "description": "IVR phone number to transfer the caller to" },
+          "created_at": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+        }
+      },
+      "SessionGetResponse": {
+        "type": "object",
+        "required": ["session_id", "status", "is_terminal", "amount", "currency", "mode", "caller", "project_slug", "created_at", "updated_at"],
+        "properties": {
+          "session_id": { "type": "string", "description": "Session UUID" },
+          "status": { "type": "string", "enum": ["created", "collecting-card", "collecting-expiry", "collecting-cvv", "collecting-postal-code", "processing", "payment-success", "payment-failed", "expired", "cancelled"], "description": "Current session status" },
+          "is_terminal": { "type": "boolean", "description": "Whether the session has reached a final state" },
+          "processor": { "$ref": "#/components/schemas/Processor" },
+          "error": { "$ref": "#/components/schemas/ErrorDetail" },
+          "amount": { "type": "number", "description": "Payment amount" },
+          "currency": { "type": "string", "description": "Currency code (e.g. usd)" },
+          "mode": { "type": "string", "enum": ["charge", "tokenize"], "description": "Payment mode" },
+          "description": { "type": "string", "description": "Charge description" },
+          "caller": { "type": "string", "description": "Customer phone in E.164 format" },
+          "project_slug": { "type": "string", "description": "Project slug" },
+          "gateway": { "type": "string", "enum": ["stripe", "authorizenet", "braintree"], "description": "Payment gateway" },
+          "callback": { "type": "string", "description": "Callback phone number" },
+          "context": { "type": "object", "description": "Call context" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" },
+          "completed_at": { "type": "string", "format": "date-time", "description": "When the session reached a terminal state" }
+        }
+      },
+      "Processor": {
+        "type": "object",
+        "description": "Payment processor details returned on successful payment",
+        "properties": {
+          "card_brand": { "type": "string", "description": "Card brand (visa, mastercard, amex, discover)" },
+          "card_last4": { "type": "string", "description": "Last 4 digits of the card" },
+          "receipt_url": { "type": "string", "description": "Hosted receipt URL (Stripe)" },
+          "stripe_charge_id": { "type": "string", "description": "Stripe Charge ID" },
+          "stripe_payment_intent_id": { "type": "string", "description": "Stripe PaymentIntent ID" },
+          "payment_method_id": { "type": "string", "description": "Stripe PaymentMethod ID (tokenize mode)" },
+          "stripe_customer_id": { "type": "string", "description": "Stripe Customer ID (tokenize mode)" },
+          "authnet_transaction_id": { "type": "string", "description": "Authorize.net Transaction ID" },
+          "authnet_auth_code": { "type": "string", "description": "Authorize.net Authorization Code" },
+          "authnet_customer_profile_id": { "type": "string", "description": "Authorize.net CIM Customer Profile ID (tokenize mode)" },
+          "authnet_payment_profile_id": { "type": "string", "description": "Authorize.net CIM Payment Profile ID (tokenize mode)" },
+          "braintree_transaction_id": { "type": "string", "description": "Braintree Transaction ID" },
+          "braintree_customer_id": { "type": "string", "description": "Braintree Customer ID (tokenize mode)" },
+          "braintree_payment_method_token": { "type": "string", "description": "Braintree Payment Method Token (tokenize mode)" }
+        }
+      },
+      "ErrorDetail": {
+        "type": "object",
+        "required": ["code"],
+        "description": "Error information for failed sessions",
+        "properties": {
+          "code": { "type": "string", "description": "Machine-readable error code" },
+          "message": { "type": "string", "description": "Human-readable error message" }
+        }
+      },
+      "WebhookResponse": {
+        "type": "object",
+        "description": "Response from VAPI/Retell webhook after creating a payment session",
+        "properties": {
+          "session_id": { "type": "string", "description": "Session UUID" },
+          "transfer_number": { "type": "string", "description": "IVR phone number to transfer the caller to" },
+          "message": { "type": "string", "description": "Human-readable instruction" }
+        }
+      }
+    }
+  }
+}

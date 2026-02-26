@@ -1,0 +1,192 @@
+---
+title: Retell Integration
+description: Set up Maven as a payment collection tool for your Retell AI agent
+---
+
+# Retell Integration
+
+Maven integrates with [Retell AI](https://retellai.com) voice agents. When your agent needs to collect a payment, it calls the `collect_payment` custom function, Maven creates a session, and the caller is transferred to Maven's IVR for secure card collection.
+
+## How It Works
+
+1. Customer is on a call with your Retell AI agent
+2. Agent calls the `collect_payment` custom function with amount and caller info
+3. Retell sends a POST to Maven's webhook endpoint
+4. Maven creates a session and returns a transfer phone number
+5. Agent transfers the caller to Maven's IVR
+6. Maven's AI agent guides the customer through card collection
+7. Maven processes the payment
+8. Caller is transferred back to your agent (if `callback` is provided)
+9. Agent calls `check_payment_status` to get the result
+
+## Setup
+
+### Step 1: Get Your Maven Credentials
+
+1. Sign up at [prod.trymaven.com](https://prod.trymaven.com)
+2. Create an **app** in the dashboard
+3. Connect a **payment gateway** (Stripe, Authorize.net, or Braintree)
+4. Create an **API key** (Settings > API Keys) — starts with `mvn_test_` or `mvn_live_`
+
+### Step 2: Configure Retell Custom Functions
+
+In your Retell agent, add two custom functions:
+
+#### collect_payment
+
+| Field | Value |
+|-------|-------|
+| Name | `collect_payment` |
+| Description | Create a secure payment session. Returns a phone number to transfer the caller to for PCI-compliant card collection. |
+| URL | `https://pciapi.trymaven.com/integrations/retell/webhook?token=YOUR_TOKEN` |
+| Method | POST |
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `amount` | number | Yes | Payment amount in dollars (e.g. 150.00) |
+| `caller` | string | Yes | Customer phone number in E.164 format |
+| `description` | string | No | Description of what the payment is for |
+| `callback` | string | No | Phone number to transfer the caller back to after payment |
+
+**Request body format:**
+
+```json
+{
+  "args": {
+    "amount": 150.00,
+    "caller": "+14085551234",
+    "description": "Invoice #1234",
+    "callback": "+18005559999"
+  }
+}
+```
+
+#### check_payment_status
+
+| Field | Value |
+|-------|-------|
+| Name | `check_payment_status` |
+| Description | Check the status of a payment session. Call after transferring the caller. Terminal statuses: payment-success, payment-failed, expired, cancelled. |
+| URL | `https://pciapi.trymaven.com/v1/sessions/{{session_id}}` |
+| Method | GET |
+| Headers | `Authorization: Bearer mvn_test_xxx` |
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `session_id` | string | Yes | The session_id from collect_payment |
+
+### Step 3: Authentication
+
+The webhook supports two auth methods:
+
+**Token auth (recommended):**
+```
+https://pciapi.trymaven.com/integrations/retell/webhook?token=wht_abc123...
+```
+
+Create a token via the dashboard or API. The token encodes your API key, app, gateway, and mode.
+
+**Legacy query params:**
+```
+https://pciapi.trymaven.com/integrations/retell/webhook?api_key=mvn_test_xxx&project=my-store&mode=charge&gateway=stripe
+```
+
+### Step 4: Agent Prompt
+
+Add payment instructions to your Retell agent's system prompt:
+
+```
+When a customer needs to make a payment:
+
+1. Confirm the payment amount with the customer
+2. Call the collect_payment function with the amount and the caller's phone number
+3. Tell the customer: "I'm going to transfer you to our secure payment line to collect your card details. Once you're done, you'll be transferred back to me."
+4. Transfer the caller to the phone number returned by collect_payment (the transfer_number field)
+5. When the caller returns, call check_payment_status with the session_id to verify the payment
+6. Inform the customer whether the payment was successful or if there was an issue
+```
+
+## Retell MCP Marketplace
+
+Maven is available on the [Retell MCP Agent Actions marketplace](https://mcps.retellai.com). Users can install Maven directly from the marketplace with guided setup for:
+
+- Maven API key
+- App selection
+- Gateway and payment mode configuration
+
+The marketplace handles tool creation and webhook URL configuration automatically.
+
+## Phone Number Requirements
+
+Maven matches incoming IVR calls to sessions using the customer's phone number. When configuring the transfer in Retell, the call to Maven's IVR must preserve the **customer's real caller ID**.
+
+<Warning>
+  If the transfer shows your Retell agent's phone number instead of the customer's number, Maven won't be able to match the call to the session.
+
+  **Fix:** Configure the transfer in Retell to forward the **customer's caller ID**, not the agent's number. In your Retell call transfer settings, ensure the "from" number is set to the customer's phone number.
+</Warning>
+
+## Webhook Response
+
+```json
+{
+  "session_id": "a1b2c3d4-...",
+  "transfer_number": "+18005551234",
+  "message": "Payment session created. Transfer the caller to +18005551234 to securely collect their card details."
+}
+```
+
+## Payload Format
+
+Retell sends custom function calls as:
+
+```json
+{
+  "name": "collect_payment",
+  "args": {
+    "amount": 150.00,
+    "caller": "+14085551234",
+    "description": "Invoice #1234"
+  },
+  "call": {
+    "call_id": "call_xxx",
+    "from_number": "+14085551234",
+    "metadata": {}
+  }
+}
+```
+
+Maven extracts `caller` from `args.caller` first, falling back to `call.from_number`. The `call.call_id` and `call.metadata` are stored in the session context for traceability.
+
+## Testing
+
+1. Use a **test** API key (`mvn_test_xxx`)
+2. Create a test call with your Retell agent
+3. Trigger payment collection
+4. When transferred to the IVR, use test card numbers:
+   - Speak "4242 4242 4242 4242" for a successful Visa charge
+   - Any future expiry date and any 3-digit CVV
+5. Verify the session shows `payment-success`
+
+## Error Handling
+
+Errors are returned with HTTP `200` (so Retell doesn't retry) with an `error` field:
+
+```json
+{
+  "error": "caller phone number is required"
+}
+```
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `Missing api_key query parameter` | No auth in URL | Use a token or add `api_key` |
+| `Missing project query parameter` | No project in URL | Add `project` or use a token |
+| `Invalid API key` | Key is wrong or revoked | Check key in Dashboard |
+| `caller phone number is required` | Missing caller | Ensure agent passes caller number |
+| `amount is required` | Missing amount | Ensure agent passes amount |
+| `Invalid parameters: ...` | Validation failed | Check phone format, amount > 0 |

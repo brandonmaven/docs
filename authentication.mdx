@@ -1,0 +1,118 @@
+---
+title: Authentication
+description: API key formats, webhook tokens, and authentication methods
+---
+
+All Maven API requests are authenticated with API keys passed as Bearer tokens. Integration webhooks use opaque tokens for additional security.
+
+## API Key Format
+
+```
+mvn_{mode}_{secret}
+```
+
+| Component | Description |
+|-----------|-------------|
+| `mvn` | Fixed prefix |
+| `mode` | `test` or `live` -- determines which gateway credentials are used |
+| `secret` | 32-character random string |
+
+**Examples:**
+- Test: `mvn_test_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6`
+- Live: `mvn_live_q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2`
+
+## Usage
+
+Pass your API key as a Bearer token in the `Authorization` header:
+
+```bash
+curl -X GET https://pciapi.trymaven.com/v1/auth/check \
+  -H "Authorization: Bearer mvn_test_your_key_here"
+```
+
+<Snippet file="api-key-warning.mdx" />
+
+## Test vs Live Mode
+
+| Feature | Test (`mvn_test_`) | Live (`mvn_live_`) |
+|---------|-------------------|-------------------|
+| Gateway credentials | Test/sandbox | Production |
+| Real charges | No | Yes |
+| Card validation | Full | Full |
+| IVR calls | Real calls placed | Real calls placed |
+| Rate limits | Same as live | 20 req/min per endpoint |
+
+<Warning>
+  Test mode uses real IVR infrastructure. Use your own phone number as the caller during testing.
+</Warning>
+
+## Webhook Tokens
+
+Integration webhooks (VAPI, Retell) use **opaque tokens** instead of raw API keys in URLs. This prevents your API key from appearing in server logs, referrer headers, or webhook configuration UIs.
+
+```bash
+# Token-based URL (recommended)
+https://pciapi.trymaven.com/integrations/vapi/webhook?token=wht_abc123...
+
+# Legacy URL (still supported)
+https://pciapi.trymaven.com/integrations/vapi/webhook?api_key=mvn_test_xxx&project=my-store&mode=charge&gateway=stripe
+```
+
+Each token encodes your API key, app, gateway, and payment mode. Tokens are created automatically when you set up integrations through the dashboard.
+
+### Creating Tokens via API
+
+```bash
+curl -X POST https://pciapi.trymaven.com/integrations/webhook-tokens \
+  -H "Authorization: Bearer <clerk-jwt>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "api_key": "mvn_test_xxx",
+    "project_slug": "my-store",
+    "gateway": "stripe",
+    "mode": "charge",
+    "integration": "vapi"
+  }'
+```
+
+```json Response
+{
+  "token": "wht_abc123...",
+  "webhook_url": "https://pciapi.trymaven.com/integrations/vapi/webhook?token=wht_abc123..."
+}
+```
+
+## Integration Auth
+
+VAPI and Retell webhooks authenticate via query parameters because these platforms don't support custom Authorization headers:
+
+```
+POST /integrations/vapi/webhook?token=wht_abc123...
+POST /integrations/retell/webhook?token=wht_abc123...
+```
+
+Standard REST API endpoints use Bearer tokens in the `Authorization` header.
+
+## Key Management
+
+Manage API keys in the [Maven Dashboard](https://prod.trymaven.com) under **Settings > API Keys**.
+
+<Steps>
+  <Step title="Create a key">
+    Click **Create Key** and select the mode (test or live).
+  </Step>
+  <Step title="Copy the key">
+    Copy the full key immediately -- it will only be shown once.
+  </Step>
+  <Step title="Store securely">
+    The key is hashed server-side (SHA-256). If you lose it, revoke and create a new one.
+  </Step>
+</Steps>
+
+## Error Responses
+
+| Status Code | Meaning |
+|-------------|---------|
+| `401` | Invalid API key, expired key, or missing Authorization header |
+| `403` | Key is valid but lacks required scopes |
+| `429` | Rate limit exceeded |

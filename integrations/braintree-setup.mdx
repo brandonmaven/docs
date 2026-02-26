@@ -1,0 +1,91 @@
+---
+title: Braintree Setup
+description: Connect your Braintree account to Maven
+---
+
+# Connecting Braintree
+
+Maven connects to Braintree using your Merchant ID, Public Key, and Private Key. These credentials allow Maven to create transactions and vault customers on your behalf.
+
+## Prerequisites
+
+- A Braintree merchant account
+- Merchant ID, Public Key, and Private Key
+- A Maven app
+
+## Getting Your Credentials
+
+<Steps>
+  <Step title="Log in to Braintree">
+    Go to [Braintree Control Panel](https://www.braintreegateway.com/login) and log in.
+  </Step>
+  <Step title="Navigate to API Keys">
+    Click the **gear icon** (Settings) in the top right, then click **API**.
+  </Step>
+  <Step title="Copy Credentials">
+    Under **API Keys**, you'll see your:
+    - **Merchant ID**
+    - **Public Key**
+    - **Private Key** (click "View" to reveal)
+  </Step>
+</Steps>
+
+## Connecting in Maven
+
+<Steps>
+  <Step title="Go to Payments">
+    In the [Maven Dashboard](https://prod.trymaven.com), navigate to your app and click the **Payments** tab.
+  </Step>
+  <Step title="Click Connect Braintree">
+    Click the Braintree card and enter your credentials.
+  </Step>
+  <Step title="Enter Credentials">
+    - **Merchant ID**: Your Braintree Merchant ID
+    - **Public Key**: Your Braintree Public Key
+    - **Private Key**: Your Braintree Private Key
+  </Step>
+  <Step title="Save">
+    Click **Connect**. Maven will validate the credentials and save them.
+  </Step>
+</Steps>
+
+## Sandbox Testing
+
+For testing, use [Braintree Sandbox](https://sandbox.braintreegateway.com/) credentials. Create a sandbox account at [braintreepayments.com/sandbox](https://www.braintreepayments.com/sandbox).
+
+Use sandbox credentials with `mvn_test_` API keys to test without real charges.
+
+## Processor Response Fields
+
+### Charge Mode
+
+| Field | Description |
+|-------|-------------|
+| `braintree_transaction_id` | Transaction ID |
+| `card_brand` | Card brand |
+| `card_last4` | Last 4 digits |
+
+### Tokenize Mode (Vault)
+
+| Field | Description |
+|-------|-------------|
+| `braintree_customer_id` | Vault Customer ID |
+| `braintree_payment_method_token` | Payment Method Token |
+| `card_brand` | Card brand |
+| `card_last4` | Last 4 digits |
+
+## Using Tokenized Cards
+
+After tokenizing, use the vault token to create transactions via the Braintree SDK:
+
+```python
+import braintree
+
+result = braintree.Transaction.sale({
+    "amount": "49.99",
+    "payment_method_token": "abc123",  # from braintree_payment_method_token
+    "options": {
+        "submit_for_settlement": True,
+    },
+})
+```

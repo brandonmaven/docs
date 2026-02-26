@@ -1,0 +1,83 @@
+---
+title: Stripe Connect
+description: Connect your Stripe account to Maven via OAuth
+---
+
+# Connecting Stripe
+
+Maven uses Stripe Connect to process payments on your Stripe account. The setup uses OAuth — you authorize Maven to create charges on your behalf.
+
+## Prerequisites
+
+- A Stripe account (test or live)
+- A Maven app
+
+## Setup Steps
+
+<Steps>
+  <Step title="Go to Payments">
+    In the [Maven Dashboard](https://prod.trymaven.com), navigate to your app and click the **Payments** tab.
+  </Step>
+  <Step title="Click Connect Stripe">
+    Click the **Connect Stripe** button. You'll be redirected to Stripe's OAuth authorization page.
+  </Step>
+  <Step title="Authorize Maven">
+    On the Stripe page, review the permissions and click **Connect**. Maven requests the ability to create charges and customers on your account.
+  </Step>
+  <Step title="Return to Dashboard">
+    After authorization, you'll be redirected back to the Maven Dashboard. Your Stripe account will show as connected.
+  </Step>
+</Steps>
+
+## Test vs Live
+
+Maven stores separate credentials for test and live modes:
+
+- **Test mode** (`mvn_test_` keys): Uses your Stripe test mode. No real charges.
+- **Live mode** (`mvn_live_` keys): Uses your Stripe live mode. Real charges.
+
+Connect both test and live Stripe accounts for full functionality.
+
+## Processor Response Fields
+
+When a payment succeeds via Stripe, the session's `processor` object includes:
+
+### Charge Mode
+
+| Field | Description |
+|-------|-------------|
+| `stripe_charge_id` | Charge ID (e.g., `ch_xxx`) |
+| `stripe_payment_intent_id` | PaymentIntent ID (e.g., `pi_xxx`) |
+| `card_brand` | Card brand (visa, mastercard, etc.) |
+| `card_last4` | Last 4 digits |
+| `receipt_url` | Stripe-hosted receipt URL |
+
+### Tokenize Mode
+
+| Field | Description |
+|-------|-------------|
+| `stripe_customer_id` | Customer ID on your account (e.g., `cus_xxx`) |
+| `payment_method_id` | Reusable PaymentMethod ID (e.g., `pm_xxx`) |
+| `card_brand` | Card brand |
+| `card_last4` | Last 4 digits |
+
+## Using Tokenized Cards
+
+After tokenizing, use the returned `stripe_customer_id` and `payment_method_id` to create charges via the Stripe API:
+
+```python
+import stripe
+
+stripe.PaymentIntent.create(
+    amount=4999,
+    currency="usd",
+    customer="cus_xxx",      # from processor.stripe_customer_id
+    payment_method="pm_xxx", # from processor.payment_method_id
+    confirm=True,
+    off_session=True,
+)
+```
+
+## Disconnecting
+
+To disconnect Stripe, go to the **Payments** tab in your app and click **Disconnect**. Existing sessions won't be affected, but new sessions using the `stripe` gateway will fail.

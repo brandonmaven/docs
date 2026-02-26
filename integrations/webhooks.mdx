@@ -1,0 +1,106 @@
+---
+title: Webhooks (Notifications)
+description: Receive real-time notifications when payment sessions complete
+---
+
+# Webhooks
+
+Maven sends HTTP POST webhooks to your server when payment sessions reach a terminal state. This is the recommended way to get payment results.
+
+## Webhook Events
+
+| Event | Trigger |
+|-------|---------|
+| `session.completed` | Session reached `payment-success` |
+| `session.failed` | Session reached `payment-failed` |
+| `session.expired` | Session expired (5-minute TTL) |
+| `session.cancelled` | Session cancelled via API |
+
+## Payload Format
+
+Webhook payloads contain the full session data:
+
+```json
+{
+  "event": "session.completed",
+  "data": {
+    "session_id": "a1b2c3d4-...",
+    "status": "payment-success",
+    "is_terminal": true,
+    "amount": 49.99,
+    "currency": "usd",
+    "mode": "charge",
+    "gateway": "stripe",
+    "caller": "+14155551234",
+    "project_slug": "my-store",
+    "processor": {
+      "card_brand": "visa",
+      "card_last4": "4242",
+      "stripe_charge_id": "ch_xxx",
+      "stripe_payment_intent_id": "pi_xxx",
+      "receipt_url": "https://pay.stripe.com/receipts/..."
+    },
+    "context": {
+      "source": "vapi",
+      "vapi_call_id": "call_xxx"
+    },
+    "created_at": "2025-01-15T10:30:00Z",
+    "updated_at": "2025-01-15T10:32:15Z",
+    "completed_at": "2025-01-15T10:32:15Z"
+  }
+}
+```
+
+## Configuring Webhooks
+
+Configure webhook URLs in the [Maven Dashboard](https://prod.trymaven.com) under **Settings > Webhooks**:
+
+1. Enter your webhook URL (must be HTTPS)
+2. Select which events to receive
+3. Save the configuration
+
+## Handling Webhooks
+
+Your webhook endpoint should:
+
+1. Return a `200` status code quickly (within 5 seconds)
+2. Process the payload asynchronously if needed
+3. Be idempotent — the same event may be delivered more than once
+
+```python
+from fastapi import FastAPI, Request
+
+app = FastAPI()
+
+@app.post("/webhooks/maven")
+async def maven_webhook(request: Request):
+    payload = await request.json()
+    event = payload["event"]
+    data = payload["data"]
+
+    if event == "session.completed":
+        session_id = data["session_id"]
+        # Update your order status, send receipt, etc.
+        await handle_payment_success(data)
+    elif event == "session.failed":
+        await handle_payment_failure(data)
+
+    return {"status": "ok"}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Always return 200 quickly">
+    Return a `200` response immediately and process the webhook asynchronously. If your endpoint times out, Maven will retry delivery.
+  </Accordion>
+  <Accordion title="Use idempotent handlers">
+    Webhooks may be delivered more than once. Use the `session_id` to deduplicate — check if you've already processed this session before acting on it.
+  </Accordion>
+  <Accordion title="Validate the payload">
+    Verify that the `session_id` in the webhook belongs to your organization by checking it against the API:
+    ```
+    GET /v1/sessions/{session_id}
+    ```
+  </Accordion>
+</AccordionGroup>
