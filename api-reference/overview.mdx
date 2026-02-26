@@ -9,19 +9,19 @@ The Maven API is a REST API that uses JSON request and response bodies. All endp
 
 ## Base URL
 
-<Snippet file="base-url.mdx" />
+```
+https://pciapi.trymaven.com
+```
 
 ## Authentication
 
-Most endpoints require an API key passed as a Bearer token in the `Authorization` header:
+All endpoints require an API key passed as a Bearer token in the `Authorization` header:
 
 ```bash
 Authorization: Bearer mvn_test_your_key_here
 ```
 
-Integration webhooks (VAPI, Retell) use query parameter authentication via [webhook tokens](/authentication#webhook-tokens).
-
-See [Authentication](/authentication) for details on key formats, webhook tokens, and test vs live modes.
+See [Authentication](/authentication) for details on key formats and test vs live modes.
 
 ## Endpoints
 
@@ -48,13 +48,6 @@ The primary endpoints for creating and managing payment sessions:
 |--------|----------|-------------|
 | `GET` | `/v1/projects` | List organization apps |
 
-### Integrations
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/integrations/vapi/webhook` | VAPI voice AI webhook |
-| `POST` | `/integrations/retell/webhook` | Retell AI webhook |
-
 ### Health
 
 | Method | Endpoint | Description |
@@ -63,11 +56,11 @@ The primary endpoints for creating and managing payment sessions:
 
 ## Rate Limits
 
-All endpoints are rate-limited per IP address. See [Error Handling](/error-handling) for details.
+All endpoints are rate-limited per IP address.
 
 ## Errors
 
-The API uses standard HTTP status codes. Error responses include a `detail` field with a human-readable message. See [Error Handling](/error-handling) for the complete reference.
+The API uses standard HTTP status codes. Error responses include a `detail` field with a human-readable message.
 
 ## Interactive Playground
 
