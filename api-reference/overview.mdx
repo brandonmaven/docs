@@ -1,49 +1,74 @@
 ---
-title: API Overview
-description: "Maven API reference"
+title: API Reference
+description: Complete reference for the Maven REST API
 ---
+
+# API Reference
+
+The Maven API is a REST API that uses JSON request and response bodies. All endpoints are served over HTTPS.
 
 ## Base URL
 
-```
-https://api.trymaven.com/v1
-```
+<Snippet file="base-url.mdx" />
 
 ## Authentication
 
-All requests require an API key in the `Authorization` header:
+Most endpoints require an API key passed as a Bearer token in the `Authorization` header:
 
 ```bash
-Authorization: Bearer sk_live_your_api_key
+Authorization: Bearer mvn_test_your_key_here
 ```
 
-See [Authentication](/get-started/authentication) for details.
+Integration webhooks (VAPI, Retell) use query parameter authentication via [webhook tokens](/authentication#webhook-tokens).
+
+See [Authentication](/authentication) for details on key formats, webhook tokens, and test vs live modes.
 
 ## Endpoints
 
+### Sessions
+
+The primary endpoints for creating and managing payment sessions:
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/sessions` | [Create a payment session](/api-reference/sessions/create) |
-| `GET` | `/sessions/:id` | [Get session details](/api-reference/sessions/get) |
-| `GET` | `/sessions?caller={phone}` | [Get session by caller](/api-reference/sessions/get-by-caller) |
-| `POST` | `/sessions/:id/cancel` | [Cancel a session](/api-reference/sessions/cancel) |
-| `GET` | `/projects` | [List all projects](/api-reference/projects/list) |
-| `GET` | `/auth/check` | [Verify API key](/api-reference/auth/check) |
+| `POST` | `/v1/sessions` | Create a new payment session |
+| `GET` | `/v1/sessions` | Get session by caller phone |
+| `GET` | `/v1/sessions/{session_id}` | Get session by ID |
+| `POST` | `/v1/sessions/{session_id}/cancel` | Cancel a session |
 
-## Error Handling
+### Auth
 
-Errors return an appropriate HTTP status code and a JSON body:
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/v1/auth/check` | Verify API key validity |
 
-```json
-{
-  "detail": "Missing required field: caller"
-}
-```
+### Apps
 
-| Status Code | Description |
-|-------------|-------------|
-| `400` | Bad request - invalid parameters |
-| `401` | Unauthorized - invalid API key |
-| `404` | Not found - resource doesn't exist |
-| `429` | Rate limited - too many requests |
-| `500` | Server error |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/v1/projects` | List organization apps |
+
+### Integrations
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/integrations/vapi/webhook` | VAPI voice AI webhook |
+| `POST` | `/integrations/retell/webhook` | Retell AI webhook |
+
+### Health
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/health` | Service health check |
+
+## Rate Limits
+
+All endpoints are rate-limited per IP address. See [Error Handling](/error-handling) for details.
+
+## Errors
+
+The API uses standard HTTP status codes. Error responses include a `detail` field with a human-readable message. See [Error Handling](/error-handling) for the complete reference.
+
+## Interactive Playground
+
+Use the API playground on each endpoint page to make test requests directly from the documentation. Enter your test API key to get started.
