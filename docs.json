@@ -62,13 +62,6 @@
             ]
           },
           {
-            "group": "Voice Providers",
-            "pages": [
-              "integrations/vapi-integration",
-              "integrations/retell-integration"
-            ]
-          },
-          {
             "group": "Payment Gateways",
             "pages": [
               "integrations/stripe-connect",
