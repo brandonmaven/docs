@@ -40,24 +40,25 @@ Connect both test and live Stripe accounts for full functionality.
 
 ## Processor Response Fields
 
-When a payment succeeds via Stripe, the session's `processor` object includes:
+When a payment succeeds via Stripe, the `processor` object in the [GET session](/api-reference/overview) response includes:
 
 ### Charge Mode
 
 | Field | Description |
 |-------|-------------|
-| `stripe_charge_id` | Charge ID (e.g., `ch_xxx`) |
 | `stripe_payment_intent_id` | PaymentIntent ID (e.g., `pi_xxx`) |
+| `stripe_charge_id` | Charge ID (e.g., `ch_xxx`) |
+| `receipt_url` | Stripe-hosted receipt URL |
+| `payment_method_id` | PaymentMethod ID (e.g., `pm_xxx`) |
 | `card_brand` | Card brand (visa, mastercard, etc.) |
 | `card_last4` | Last 4 digits |
-| `receipt_url` | Stripe-hosted receipt URL |
 
 ### Tokenize Mode
 
 | Field | Description |
 |-------|-------------|
-| `stripe_customer_id` | Customer ID on your account (e.g., `cus_xxx`) |
-| `payment_method_id` | Reusable PaymentMethod ID (e.g., `pm_xxx`) |
+| `stripe_customer_id` | Customer created on your Stripe account (e.g., `cus_xxx`) |
+| `payment_method_id` | PaymentMethod ID (e.g., `pm_xxx`) |
 | `card_brand` | Card brand |
 | `card_last4` | Last 4 digits |
 
