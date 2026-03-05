@@ -5,55 +5,238 @@ description: Receive real-time notifications when payment sessions complete
 
 # Webhooks
 
-Maven sends HTTP POST webhooks to your server when payment sessions reach a terminal state. This is the recommended way to get payment results.
+Maven sends an HTTP POST to your webhook URL when a payment session completes or fails. This is the recommended way to get payment results back into your system.
 
-## Webhook Events
+## When Webhooks Fire
 
-| Event | Trigger |
-|-------|---------|
-| `session.completed` | Session reached `payment-success` |
-| `session.failed` | Session reached `payment-failed` |
-| `session.expired` | Session expired (5-minute TTL) |
-| `session.cancelled` | Session cancelled via API |
+Webhooks are sent when a session reaches `payment-success` or `payment-failed`. They are **not** sent for `expired` or `cancelled` sessions — poll the [GET session endpoint](/api-reference/overview) for those.
+
+## Configuring Your Webhook URL
+
+Set a webhook URL per app in the [Maven Dashboard](https://prod.trymaven.com):
+
+1. Navigate to your app
+2. Go to the **Settings** tab
+3. Enter your webhook URL (must be HTTPS in production)
+4. Save
 
 ## Payload Format
 
-Webhook payloads contain the full session data:
+All webhook payloads use the same structure:
 
 ```json
 {
-  "event": "session.completed",
-  "data": {
-    "session_id": "a1b2c3d4-...",
-    "status": "payment-success",
-    "is_terminal": true,
-    "amount": 49.99,
-    "currency": "usd",
-    "mode": "charge",
-    "gateway": "stripe",
-    "caller": "+14155551234",
-    "project_slug": "my-store",
-    "processor": {
-      "card_brand": "visa",
-      "card_last4": "4242",
-      "stripe_charge_id": "ch_xxx",
-      "stripe_payment_intent_id": "pi_xxx",
-      "receipt_url": "https://pay.stripe.com/receipts/..."
-    },
-    "memory": {},
-    "created_at": "2025-01-15T10:30:00Z",
-    "updated_at": "2025-01-15T10:32:15Z",
-    "completed_at": "2025-01-15T10:32:15Z"
+  "event": "payment.completed",
+  "session_id": "a1b2c3d4-...",
+  "status": "payment-success",
+  "amount": 4999,
+  "currency": "USD",
+  "mode": "charge",
+  "gateway": "stripe",
+  "caller": "+14155551234",
+  "card_brand": "visa",
+  "card_last4": "4242",
+  "processor": {
+    "payment_intent_id": "pi_xxx",
+    "charge_id": "ch_xxx",
+    "receipt_url": "https://pay.stripe.com/receipts/...",
+    "payment_method_id": "pm_xxx",
+    "card_brand": "visa",
+    "card_last4": "4242",
+    "postal_code": "90210",
+    "exp_month": 12,
+    "exp_year": 2027
   }
 }
 ```
 
-## Configuring Webhooks
+### Field Reference
 
-Configure webhook URLs in the [Maven Dashboard](https://prod.trymaven.com) under **Settings > Webhooks**:
+| Field | Type | Description |
+|-------|------|-------------|
+| `event` | string | Always `"payment.completed"` |
+| `session_id` | string | Session UUID |
+| `status` | string | `"payment-success"` or `"payment-failed"` |
+| `amount` | integer | Amount in **cents** (e.g., `4999` = $49.99) |
+| `currency` | string | Currency code (e.g., `"USD"`) |
+| `mode` | string | `"charge"` or `"tokenize"` |
+| `gateway` | string | `"stripe"`, `"authorizenet"`, or `"braintree"` |
+| `caller` | string | Caller phone number in E.164 format |
+| `card_brand` | string \| null | Card brand (visa, mastercard, amex, etc.) |
+| `card_last4` | string \| null | Last 4 digits of the card |
+| `processor` | object \| null | Gateway-specific response fields (see below) |
+| `error` | object \| null | Present only when `status` is `"payment-failed"` |
 
-1. Enter your webhook URL (must be HTTPS)
-2. Save the configuration
+### Error Object (failures only)
+
+```json
+{
+  "error": {
+    "code": "card_declined",
+    "message": "Your card was declined."
+  }
+}
+```
+
+### Processor Fields by Gateway
+
+The `processor` object contains different fields depending on the gateway and mode (`charge` vs `tokenize`).
+
+<Tabs>
+  <Tab title="Stripe">
+    **Charge mode:**
+    ```json
+    {
+      "payment_intent_id": "pi_xxx",
+      "charge_id": "ch_xxx",
+      "receipt_url": "https://pay.stripe.com/receipts/...",
+      "payment_method_id": "pm_xxx",
+      "card_brand": "visa",
+      "card_last4": "4242",
+      "postal_code": "90210",
+      "exp_month": 12,
+      "exp_year": 2027
+    }
+    ```
+
+    | Field | Description |
+    |-------|-------------|
+    | `payment_intent_id` | Stripe PaymentIntent ID |
+    | `charge_id` | Stripe Charge ID |
+    | `receipt_url` | Stripe-hosted receipt URL |
+    | `payment_method_id` | Stripe PaymentMethod ID |
+    | `card_brand` | Card brand (visa, mastercard, etc.) |
+    | `card_last4` | Last 4 digits of the card |
+    | `postal_code` | Billing ZIP/postal code (if collected) |
+    | `exp_month` | Card expiration month (if collected) |
+    | `exp_year` | Card expiration year (if collected) |
+
+    **Tokenize mode:**
+    ```json
+    {
+      "payment_method_id": "pm_xxx",
+      "cloned_payment_method_id": "pm_yyy",
+      "cloned_customer_id": "cus_xxx",
+      "card_brand": "visa",
+      "card_last4": "4242",
+      "postal_code": "90210",
+      "exp_month": 12,
+      "exp_year": 2027
+    }
+    ```
+
+    | Field | Description |
+    |-------|-------------|
+    | `payment_method_id` | Original Stripe PaymentMethod ID (on Maven's platform account) |
+    | `cloned_payment_method_id` | PaymentMethod cloned to your Stripe account (absent if same as `payment_method_id`) |
+    | `cloned_customer_id` | Customer created on your Stripe account |
+    | `card_brand` | Card brand |
+    | `card_last4` | Last 4 digits |
+    | `postal_code` | Billing ZIP/postal code (if collected) |
+    | `exp_month` | Card expiration month (if collected) |
+    | `exp_year` | Card expiration year (if collected) |
+  </Tab>
+
+  <Tab title="Authorize.net">
+    **Charge mode:**
+    ```json
+    {
+      "transaction_id": "123456789",
+      "auth_code": "ABC123",
+      "card_brand": "visa",
+      "card_last4": "4242",
+      "postal_code": "90210",
+      "exp_month": 12,
+      "exp_year": 2027
+    }
+    ```
+
+    | Field | Description |
+    |-------|-------------|
+    | `transaction_id` | Authorize.net transaction ID |
+    | `auth_code` | Authorization code |
+    | `card_brand` | Card brand |
+    | `card_last4` | Last 4 digits |
+    | `postal_code` | Billing ZIP/postal code (if collected) |
+    | `exp_month` | Card expiration month (if collected) |
+    | `exp_year` | Card expiration year (if collected) |
+
+    **Tokenize mode:**
+    ```json
+    {
+      "customer_profile_id": "123456789",
+      "payment_profile_id": "987654321",
+      "card_brand": "visa",
+      "card_last4": "4242",
+      "postal_code": "90210",
+      "exp_month": 12,
+      "exp_year": 2027
+    }
+    ```
+
+    | Field | Description |
+    |-------|-------------|
+    | `customer_profile_id` | CIM Customer Profile ID |
+    | `payment_profile_id` | CIM Payment Profile ID |
+    | `card_brand` | Card brand |
+    | `card_last4` | Last 4 digits |
+    | `postal_code` | Billing ZIP/postal code (if collected) |
+    | `exp_month` | Card expiration month (if collected) |
+    | `exp_year` | Card expiration year (if collected) |
+  </Tab>
+
+  <Tab title="Braintree">
+    **Charge mode:**
+    ```json
+    {
+      "transaction_id": "abc123",
+      "braintree_status": "submitted_for_settlement",
+      "customer_id": "cust_xxx",
+      "payment_method_token": "token_xxx",
+      "card_brand": "visa",
+      "card_last4": "4242",
+      "postal_code": "90210",
+      "exp_month": 12,
+      "exp_year": 2027
+    }
+    ```
+
+    | Field | Description |
+    |-------|-------------|
+    | `transaction_id` | Braintree transaction ID |
+    | `braintree_status` | Transaction status (e.g., `submitted_for_settlement`) |
+    | `customer_id` | Braintree customer ID |
+    | `payment_method_token` | Braintree payment method token |
+    | `card_brand` | Card brand |
+    | `card_last4` | Last 4 digits |
+    | `postal_code` | Billing ZIP/postal code (if collected) |
+    | `exp_month` | Card expiration month (if collected) |
+    | `exp_year` | Card expiration year (if collected) |
+
+    **Tokenize mode:**
+    ```json
+    {
+      "customer_id": "cust_xxx",
+      "payment_method_token": "token_xxx",
+      "card_brand": "visa",
+      "card_last4": "4242",
+      "postal_code": "90210",
+      "exp_month": 12,
+      "exp_year": 2027
+    }
+    ```
+
+    | Field | Description |
+    |-------|-------------|
+    | `customer_id` | Braintree customer ID |
+    | `payment_method_token` | Braintree payment method token |
+    | `card_brand` | Card brand |
+    | `card_last4` | Last 4 digits |
+    | `postal_code` | Billing ZIP/postal code (if collected) |
+    | `exp_month` | Card expiration month (if collected) |
+    | `exp_year` | Card expiration year (if collected) |
+  </Tab>
+</Tabs>
 
 ## Handling Webhooks
 
@@ -61,7 +244,7 @@ Your webhook endpoint should:
 
 1. Return a `200` status code quickly (within 5 seconds)
 2. Process the payload asynchronously if needed
-3. Be idempotent — the same event may be delivered more than once
+3. Be idempotent — use `session_id` to deduplicate
 
 ```python
 from fastapi import FastAPI, Request
@@ -71,15 +254,17 @@ app = FastAPI()
 @app.post("/webhooks/maven")
 async def maven_webhook(request: Request):
     payload = await request.json()
-    event = payload["event"]
-    data = payload["data"]
+    session_id = payload["session_id"]
+    status = payload["status"]
 
-    if event == "session.completed":
-        session_id = data["session_id"]
-        # Update your order status, send receipt, etc.
-        await handle_payment_success(data)
-    elif event == "session.failed":
-        await handle_payment_failure(data)
+    if status == "payment-success":
+        card_last4 = payload.get("card_last4")
+        processor = payload.get("processor", {})
+        # Update your order, send receipt, etc.
+        await handle_payment_success(session_id, processor)
+    elif status == "payment-failed":
+        error = payload.get("error", {})
+        await handle_payment_failure(session_id, error)
 
     return {"status": "ok"}
 ```
@@ -88,15 +273,18 @@ async def maven_webhook(request: Request):
 
 <AccordionGroup>
   <Accordion title="Always return 200 quickly">
-    Return a `200` response immediately and process the webhook asynchronously. If your endpoint times out, Maven will retry delivery.
+    Return a `200` response immediately and process the webhook asynchronously. If your endpoint times out, the webhook will not be retried.
   </Accordion>
   <Accordion title="Use idempotent handlers">
-    Webhooks may be delivered more than once. Use the `session_id` to deduplicate — check if you've already processed this session before acting on it.
+    Use the `session_id` to deduplicate — check if you've already processed this session before acting on it.
   </Accordion>
   <Accordion title="Validate the payload">
     Verify that the `session_id` in the webhook belongs to your organization by checking it against the API:
     ```
     GET /v1/sessions/{session_id}
     ```
+  </Accordion>
+  <Accordion title="Handle failures gracefully">
+    Webhook delivery is fire-and-forget. If your endpoint is down, the webhook is lost. For critical flows, also poll the session status as a fallback.
   </Accordion>
 </AccordionGroup>

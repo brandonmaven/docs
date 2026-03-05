@@ -32,9 +32,11 @@ Open the **Playground** from the sidebar. Select your app, gateway, and mode, en
 
 ## 3. Get the Result
 
-Configure a [webhook](/integrations/webhooks) to get notified when sessions complete. Maven sends a POST to your endpoint with the session data including status, card brand, last 4 digits, and gateway-specific details.
+Configure a [webhook](/integrations/webhooks) to get notified when sessions complete. Maven sends a POST to your app's webhook URL with the payment status, card brand, last 4 digits, and gateway-specific details.
 
-See the [API Reference](/api-reference/overview) for creating sessions programmatically and the full webhook payload format.
+Set your webhook URL in the app's **Settings** tab. See the [Webhooks guide](/integrations/webhooks) for the full payload format.
+
+See the [API Reference](/api-reference/overview) for creating sessions programmatically.
 
 ## Session Lifecycle
 

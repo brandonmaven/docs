@@ -5,14 +5,33 @@ description: Configure the voice your callers hear during payment collection
 
 # Voice Settings
 
-Configure the voice your callers hear during payment collection. In your app, go to the **Voice** tab to choose a TTS provider and voice.
+Configure the voice your callers hear during payment collection.
 
-## Providers
+## Default Voice
 
-| Provider | Description |
-|----------|-------------|
-| **ElevenLabs** | High-quality, natural-sounding voices |
-| **Deepgram** | Low-latency voice synthesis |
-| **Cartesia** | Fast, expressive voices |
+Every app uses Maven's default ElevenLabs voice at no extra cost. No setup required — your callers will hear a natural-sounding voice out of the box.
 
-Each provider requires an API key — add yours in **Settings > Voice**. You can set a different voice per app, or use the organization default. If you use the organization default, Maven provides the API key.
+## Custom Voices
+
+To use your own voice, model, or provider, add your TTS API key in **Settings > Voice** in the [Maven Dashboard](https://prod.trymaven.com). Once a key is configured, you can customize the voice per app in the app's **Voice** tab.
+
+### Supported Providers
+
+| Provider | Key format |
+|----------|------------|
+| **ElevenLabs** | `sk_...` |
+| **Deepgram** | `dg_...` |
+| **Cartesia** | `sk-...` |
+
+### Per-App Configuration
+
+Once you've added your API key:
+
+1. Go to your app's **Voice** tab
+2. Select a TTS provider
+3. Set the **Model** and **Voice ID** for your chosen provider
+4. Save
+
+<Warning>
+  Without your own API key, voice customization is locked. You'll see the default voice settings and cannot change the model or voice ID.
+</Warning>
