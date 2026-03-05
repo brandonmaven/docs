@@ -22,33 +22,147 @@ Set a webhook URL per app in the [Maven Dashboard](https://prod.trymaven.com):
 
 ## Payload Format
 
-All webhook payloads use the same structure:
+All webhook payloads share the same top-level fields. The `processor` object varies by gateway and mode — see [Processor Fields by Gateway](#processor-fields-by-gateway) for the full specs.
 
-```json
-{
-  "event": "payment.completed",
-  "session_id": "a1b2c3d4-...",
-  "status": "payment-success",
-  "amount": 4999,
-  "currency": "USD",
-  "mode": "charge",
-  "gateway": "stripe",
-  "caller": "+14155551234",
-  "card_brand": "visa",
-  "card_last4": "4242",
-  "processor": {
-    "payment_intent_id": "pi_xxx",
-    "charge_id": "ch_xxx",
-    "receipt_url": "https://pay.stripe.com/receipts/...",
-    "payment_method_id": "pm_xxx",
-    "card_brand": "visa",
-    "card_last4": "4242",
-    "postal_code": "90210",
-    "exp_month": 12,
-    "exp_year": 2027
-  }
-}
-```
+<Tabs>
+  <Tab title="Stripe (Charge)">
+    ```json
+    {
+      "event": "payment.completed",
+      "session_id": "a1b2c3d4-...",
+      "status": "payment-success",
+      "amount": 4999,
+      "currency": "USD",
+      "mode": "charge",
+      "gateway": "stripe",
+      "caller": "+14155551234",
+      "card_brand": "visa",
+      "card_last4": "4242",
+      "processor": {
+        "payment_intent_id": "pi_xxx",
+        "charge_id": "ch_xxx",
+        "receipt_url": "https://pay.stripe.com/receipts/...",
+        "payment_method_id": "pm_xxx",
+        "card_brand": "visa",
+        "card_last4": "4242"
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Stripe (Tokenize)">
+    ```json
+    {
+      "event": "payment.completed",
+      "session_id": "a1b2c3d4-...",
+      "status": "payment-success",
+      "amount": 4999,
+      "currency": "USD",
+      "mode": "tokenize",
+      "gateway": "stripe",
+      "caller": "+14155551234",
+      "card_brand": "visa",
+      "card_last4": "4242",
+      "processor": {
+        "payment_method_id": "pm_xxx",
+        "cloned_payment_method_id": "pm_yyy",
+        "cloned_customer_id": "cus_xxx",
+        "card_brand": "visa",
+        "card_last4": "4242"
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Authorize.net (Charge)">
+    ```json
+    {
+      "event": "payment.completed",
+      "session_id": "a1b2c3d4-...",
+      "status": "payment-success",
+      "amount": 4999,
+      "currency": "USD",
+      "mode": "charge",
+      "gateway": "authorizenet",
+      "caller": "+14155551234",
+      "card_brand": "visa",
+      "card_last4": "4242",
+      "processor": {
+        "transaction_id": "123456789",
+        "auth_code": "ABC123",
+        "card_brand": "visa",
+        "card_last4": "4242"
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Authorize.net (Tokenize)">
+    ```json
+    {
+      "event": "payment.completed",
+      "session_id": "a1b2c3d4-...",
+      "status": "payment-success",
+      "amount": 4999,
+      "currency": "USD",
+      "mode": "tokenize",
+      "gateway": "authorizenet",
+      "caller": "+14155551234",
+      "card_brand": "visa",
+      "card_last4": "4242",
+      "processor": {
+        "customer_profile_id": "123456789",
+        "payment_profile_id": "987654321",
+        "card_brand": "visa",
+        "card_last4": "4242"
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Braintree (Charge)">
+    ```json
+    {
+      "event": "payment.completed",
+      "session_id": "a1b2c3d4-...",
+      "status": "payment-success",
+      "amount": 4999,
+      "currency": "USD",
+      "mode": "charge",
+      "gateway": "braintree",
+      "caller": "+14155551234",
+      "card_brand": "visa",
+      "card_last4": "4242",
+      "processor": {
+        "transaction_id": "abc123",
+        "braintree_status": "submitted_for_settlement",
+        "customer_id": "cust_xxx",
+        "payment_method_token": "token_xxx",
+        "card_brand": "visa",
+        "card_last4": "4242"
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Braintree (Tokenize)">
+    ```json
+    {
+      "event": "payment.completed",
+      "session_id": "a1b2c3d4-...",
+      "status": "payment-success",
+      "amount": 4999,
+      "currency": "USD",
+      "mode": "tokenize",
+      "gateway": "braintree",
+      "caller": "+14155551234",
+      "card_brand": "visa",
+      "card_last4": "4242",
+      "processor": {
+        "customer_id": "cust_xxx",
+        "payment_method_token": "token_xxx",
+        "card_brand": "visa",
+        "card_last4": "4242"
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
 
 ### Field Reference
 
