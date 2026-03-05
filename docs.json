@@ -62,6 +62,13 @@
             ]
           },
           {
+            "group": "Voice AI Platforms",
+            "pages": [
+              "integrations/vapi",
+              "integrations/retell"
+            ]
+          },
+          {
             "group": "Payment Gateways",
             "pages": [
               "integrations/stripe-connect",

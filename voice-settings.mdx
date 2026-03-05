@@ -35,3 +35,33 @@ Once you've added your API key:
 <Warning>
   Without your own API key, voice customization is locked. You'll see the default voice settings and cannot change the model or voice ID.
 </Warning>
+
+## Custom Greeting
+
+Customize the greeting message your callers hear when they connect to the payment line. Set greetings per app in the **Voice** tab.
+
+### Greeting Types
+
+| Greeting | When used |
+|----------|-----------|
+| **Charge greeting** | Caller is in charge mode and can speak or use keypad |
+| **Charge greeting (keypad only)** | Caller is in charge mode, DTMF-only |
+| **Tokenize greeting** | Caller is in tokenize mode and can speak or use keypad |
+| **Tokenize greeting (keypad only)** | Caller is in tokenize mode, DTMF-only |
+
+### Default Greetings
+
+If no custom greeting is set, Maven uses built-in defaults:
+
+- **Charge**: *"Hi! To process your payment of $X.XX, go ahead and read your card number slowly, one group at a time, or enter it on your keypad."*
+- **Tokenize**: *"Hi! To save your card on file, go ahead and read your card number slowly, one group at a time, or enter it on your keypad."*
+
+### Template Variables
+
+Use these placeholders in your custom greeting and Maven will replace them with the session values:
+
+| Variable | Replaced with |
+|----------|---------------|
+| `{{amount}}` | Payment amount (e.g., `$49.99`) |
+| `{{description}}` | Charge description (if provided) |
+| `{{mode}}` | `"payment"` for charge, `"card on file"` for tokenize |

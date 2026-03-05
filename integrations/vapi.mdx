@@ -1,0 +1,135 @@
+---
+title: VAPI
+description: Integrate Maven voice payments with your VAPI agent
+---
+
+# VAPI Integration
+
+Add PCI-compliant voice payments to your VAPI agent. When your agent needs to collect a payment, it calls Maven to create a session and transfers the caller to Maven's secure payment line.
+
+## How It Works
+
+<Steps>
+  <Step title="Agent triggers collect_payment">
+    During a call, your VAPI agent calls the `collect_payment` function with the amount and caller's phone number.
+  </Step>
+  <Step title="Maven creates a session">
+    Maven creates a payment session and returns a phone number (or SIP URI) to transfer the caller to.
+  </Step>
+  <Step title="Agent transfers the caller">
+    Your agent uses the `transfer_to_payment` tool to transfer the caller to Maven's secure payment line.
+  </Step>
+  <Step title="Payment collected">
+    Maven collects the card details, processes the payment, and sends a [webhook](/integrations/webhooks) with the result. The caller is optionally transferred back to your agent via the `callback` number.
+  </Step>
+</Steps>
+
+## Setup
+
+### Automatic (Dashboard)
+
+The easiest way to set up is from the Maven Dashboard:
+
+<Steps>
+  <Step title="Go to your app's Integrations tab">
+    In the [Maven Dashboard](https://prod.trymaven.com), navigate to your app and click **Integrations**.
+  </Step>
+  <Step title="Select VAPI">
+    Enter your VAPI Private Key and Maven API key. Optionally provide a VAPI Assistant ID to auto-attach the tools.
+  </Step>
+  <Step title="Click Connect">
+    Maven creates the following tools in your VAPI account:
+    - `collect_payment` — creates a payment session
+    - `transfer_to_payment` — transfers the caller to Maven
+    - `get_session` — looks up a session by phone number
+    - `cancel_session` — cancels a pending session
+  </Step>
+</Steps>
+
+Your VAPI Private Key is used once to create the tools and is never stored.
+
+### Manual (Webhook URL)
+
+If you prefer to configure the tools yourself, use a webhook URL:
+
+```
+https://pciapi.trymaven.com/integrations/vapi/webhook?token=YOUR_TOKEN
+```
+
+Generate a webhook token from the dashboard or via the API. The token encodes your API key, project, gateway, and mode so they don't need to be passed as query parameters.
+
+**Legacy format** (also supported):
+
+```
+https://pciapi.trymaven.com/integrations/vapi/webhook?api_key=mvn_test_xxx&project=my-store&mode=charge&gateway=stripe
+```
+
+## Function Reference
+
+### collect_payment
+
+Creates a payment session. Returns a phone number to transfer the caller to.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `amount` | number | Yes | Payment amount in dollars (e.g., `150.00`) |
+| `caller` | string | Yes | Customer phone number in E.164 format. Auto-filled from VAPI call metadata if omitted. |
+| `description` | string | No | Description of what the payment is for |
+| `callback` | string | No | Phone number to transfer the caller back to after payment |
+| `memory` | string | No | Summary of the call context to carry across the transfer |
+
+**Response:**
+
+```json
+{
+  "session_id": "a1b2c3d4-...",
+  "transfer_number": "+18005551234",
+  "sip_uri": "sip:...",
+  "message": "Payment session created. Transfer the caller to +18005551234 to collect their card details."
+}
+```
+
+### get_session
+
+Looks up the most recent payment session for a caller.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `phone_number` | string | Yes | Customer phone number in E.164 format |
+
+**Response:**
+
+```json
+{
+  "session_id": "a1b2c3d4-...",
+  "status": "payment-success",
+  "amount": 49.99,
+  "currency": "USD",
+  "mode": "charge",
+  "gateway": "stripe",
+  "caller": "+14155551234"
+}
+```
+
+### cancel_session
+
+Cancels a pending payment session.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `session_id` | string | Yes | The session ID returned by `collect_payment` |
+
+**Response:**
+
+```json
+{
+  "status": "cancelled",
+  "session_id": "a1b2c3d4-..."
+}
+```
