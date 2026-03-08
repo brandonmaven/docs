@@ -63,7 +63,7 @@ VAPI sends payloads in multiple formats (tool-calls, function-call, and API requ
 </Note>
 
 <Warning>
-**Important: Use your own Twilio number with VAPI, not a VAPI phone number.** When VAPI transfers a call, it originates the transfer from VAPI's own phone number — not the caller's number. Maven matches sessions by caller ID, so if the transfer comes from a VAPI number instead of the customer's number, Maven can't match it to the session. To avoid this, configure your VAPI agent with your own Twilio number so the caller ID is preserved during transfers.
+**Important: Use your own phone number with VAPI, not a VAPI phone number.** When VAPI transfers a call, it originates the transfer from VAPI's own phone number — not the caller's number. Maven matches sessions by caller ID, so if the transfer comes from a VAPI number instead of the customer's number, Maven can't match it to the session. To avoid this, configure your VAPI agent with your own phone number (e.g. Twilio, Vonage, or Telnyx) so the caller ID is preserved during transfers.
 </Warning>
 
 ## Function Reference
