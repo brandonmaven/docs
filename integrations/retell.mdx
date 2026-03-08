@@ -110,7 +110,28 @@ Retell requires manual configuration of custom functions. Here's how to set it u
   </Step>
 </Steps>
 
-<Tip>
-**Prompt your agent** to call `collect_payment` first, then the Transfer Call node routes to the returned `transfer_number`. Example system prompt addition: *"When the customer is ready to pay, call collect_payment with the amount and their phone number. Then transfer them to the transfer_number from the response."*
-</Tip>
+## Example System Prompt
+
+Add something like this to your Retell agent's system prompt. Retell provides `{{user_number}}` and `{{agent_number}}` as dynamic variables.
+
+```
+When a caller needs to make a payment, use the following flow:
+
+1. Confirm the caller wants to pay their balance
+2. Call collect_payment with:
+   - amount: the payment amount
+   - caller: {{user_number}}
+   - description: a short description of the payment
+   - callback: {{agent_number}}
+3. Tell the caller you're transferring them to our secure payment line
+4. Transfer the call to the transfer_number returned by collect_payment
+
+After the caller returns from the payment line:
+1. Call get_session with {{user_number}} to check the payment status
+2. If status is "payment-success" — confirm the payment was successful and thank them
+3. If status is "payment-failed" or "expired" — let them know and offer to try again
+
+Keep responses short and conversational. Do not ask for card details — the
+secure payment line handles that.
+```
 
