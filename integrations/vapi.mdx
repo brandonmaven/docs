@@ -18,6 +18,10 @@ Add PCI-compliant voice payments to your VAPI agent. When your agent needs to co
   </Step>
   <Step title="Agent transfers the caller">
     Your agent uses the `transfer_to_payment` tool to transfer the caller to Maven's secure payment line.
+
+    <Warning>
+    **Use your own phone number, not a VAPI phone number.** VAPI originates transfers from its own number — not the caller's. Maven matches sessions by caller ID, so the transfer must come from the customer's number. Configure your VAPI agent with your own phone number (e.g. Twilio, Vonage, or Telnyx) to preserve the caller ID.
+    </Warning>
   </Step>
   <Step title="Payment collected">
     Maven collects the card details, processes the payment, and sends a [webhook](/integrations/webhooks) with the result. The caller is optionally transferred back to your agent via the `callback` number.
@@ -61,95 +65,3 @@ Generate a webhook token from the dashboard or via the API. The token encodes yo
 <Note>
 VAPI sends payloads in multiple formats (tool-calls, function-call, and API request). Maven auto-detects the format and handles all three.
 </Note>
-
-<Warning>
-**Important: Use your own phone number with VAPI, not a VAPI phone number.** When VAPI transfers a call, it originates the transfer from VAPI's own phone number — not the caller's number. Maven matches sessions by caller ID, so if the transfer comes from a VAPI number instead of the customer's number, Maven can't match it to the session. To avoid this, configure your VAPI agent with your own phone number (e.g. Twilio, Vonage, or Telnyx) so the caller ID is preserved during transfers.
-</Warning>
-
-## Function Reference
-
-### collect_payment
-
-Creates a payment session. Returns a phone number to transfer the caller to.
-
-**Parameters:**
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `amount` | number | Yes | Payment amount in dollars (e.g., `150.00`) |
-| `caller` | string | No | Customer phone number in E.164 format. Auto-filled from VAPI call metadata if omitted. |
-| `description` | string | No | Description of what the payment is for |
-| `callback` | string | No | Phone number to transfer the caller back to after payment |
-| `memory` | string | No | Summary of the call context to carry across the transfer (e.g., what the caller discussed with your agent) |
-
-**Response:**
-
-```json
-{
-  "session_id": "a1b2c3d4-...",
-  "transfer_number": "+18005551234",
-  "message": "Payment session created. Transfer the caller to +18005551234 to collect their card details."
-}
-```
-
-### get_session
-
-Looks up the most recent payment session for a caller.
-
-**Parameters:**
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `phone_number` | string | Yes | Customer phone number in E.164 format |
-
-**Response:**
-
-```json
-{
-  "session_id": "a1b2c3d4-...",
-  "status": "payment-success",
-  "amount": 49.99,
-  "currency": "USD",
-  "mode": "charge",
-  "gateway": "stripe",
-  "caller": "+14155551234",
-  "description": "Monthly subscription",
-  "error": null,
-  "created_at": "2026-03-07T10:09:29Z",
-  "completed_at": "2026-03-07T10:10:30Z"
-}
-```
-
-### cancel_session
-
-Cancels a pending payment session.
-
-**Parameters:**
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `session_id` | string | Yes | The session ID returned by `collect_payment` |
-
-**Response:**
-
-```json
-{
-  "status": "cancelled",
-  "session_id": "a1b2c3d4-..."
-}
-```
-
-## Session Statuses
-
-| Status | Description |
-|--------|-------------|
-| `created` | Session created, awaiting caller |
-| `collecting-card` | Caller is entering their card number |
-| `collecting-expiry` | Caller is entering expiration date |
-| `collecting-cvv` | Caller is entering CVV |
-| `collecting-postal-code` | Caller is entering postal code (if required) |
-| `processing` | Card submitted to payment gateway |
-| `payment-success` | Payment charged or card tokenized |
-| `payment-failed` | Payment declined or error |
-| `expired` | Session TTL exceeded |
-| `cancelled` | Cancelled by API |
