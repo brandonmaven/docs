@@ -75,7 +75,7 @@ Retell requires manual configuration of custom functions. Here's how to set it u
     This is a **Transfer Call node**, not a custom function. In your Retell agent's conversation flow, add a Transfer Call node with:
     - **Routing**: Dynamic — prompt the agent: *"Transfer to the transfer_number returned by collect_payment."*
     - **Transfer type**: Cold Transfer
-    - **Displayed Caller ID**: User's Number
+    - **Displayed Caller ID**: **User's Number** *(required — Maven matches sessions by caller ID, so this must be the caller's number, not the agent's)*
   </Step>
   <Step title="Add get_session and cancel_session (optional)">
     You can also add these as custom functions using the same server URL:
