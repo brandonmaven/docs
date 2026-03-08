@@ -39,28 +39,86 @@ Retell requires manual configuration of custom functions. Here's how to set it u
     In your Retell agent, add a **Custom Function** with:
     - **Name**: `collect_payment`
     - **URL**: Your webhook URL from step 1
-    - **Description**: "Collect a payment from the caller. Call this when the caller is ready to pay."
-    - **Parameters**:
-      - `amount` (number, required) — Payment amount in dollars
-      - `description` (string, optional) — What the payment is for
-      - `callback` (string, optional) — Phone number to transfer back to after payment
-      - `memory` (string, optional) — Summary of the call so far
+    - **Description**: `Collect a payment from the caller. Call this when the caller is ready to pay.`
+    - **Parameters** (paste this JSON):
+
+    ```json
+    {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number",
+          "description": "Payment amount in dollars (e.g. 150.00)"
+        },
+        "description": {
+          "type": "string",
+          "description": "What the payment is for"
+        },
+        "callback": {
+          "type": "string",
+          "description": "Phone number to transfer the caller back to after payment"
+        },
+        "memory": {
+          "type": "string",
+          "description": "Summary of the call so far to carry across the transfer"
+        }
+      },
+      "required": ["amount"]
+    }
+    ```
 
     You do **not** need to add `caller` — Maven auto-fills it from `call.from_number`.
   </Step>
   <Step title="Create the transfer_call function in Retell">
     Add another Custom Function:
     - **Name**: `transfer_call`
-    - **Description**: "Transfer the caller to the payment line. Call this after collect_payment returns a transfer_number."
+    - **URL**: Your webhook URL from step 1
+    - **Description**: `Transfer the caller to the payment line. Call this after collect_payment returns a transfer_number.`
     - **Parameters**:
-      - `transfer_number` (string, required) — The phone number returned by collect_payment
+
+    ```json
+    {
+      "type": "object",
+      "properties": {
+        "transfer_number": {
+          "type": "string",
+          "description": "The phone number returned by collect_payment"
+        }
+      },
+      "required": ["transfer_number"]
+    }
+    ```
   </Step>
   <Step title="Add get_session and cancel_session (optional)">
-    You can also add:
-    - **`get_session`** — Look up a session by phone number. Parameter: `phone_number` (string, required)
-    - **`cancel_session`** — Cancel a pending session. Parameter: `session_id` (string, required)
+    You can also add these using the same webhook URL:
 
-    Both use the same webhook URL.
+    **get_session** — Look up a session by phone number:
+    ```json
+    {
+      "type": "object",
+      "properties": {
+        "phone_number": {
+          "type": "string",
+          "description": "Customer phone number in E.164 format (e.g. +14155551234)"
+        }
+      },
+      "required": ["phone_number"]
+    }
+    ```
+
+    **cancel_session** — Cancel a pending session:
+    ```json
+    {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "description": "The session ID returned by collect_payment"
+        }
+      },
+      "required": ["session_id"]
+    }
+    ```
   </Step>
 </Steps>
 
