@@ -12,7 +12,7 @@
   },
   "servers": [
     {
-      "url": "https://pciapi.trymaven.com",
+      "url": "https://api.trymaven.com",
       "description": "Production"
     }
   ],

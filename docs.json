@@ -36,13 +36,13 @@
     "links": [
       {
         "label": "Dashboard",
-        "href": "https://prod.trymaven.com"
+        "href": "https://app.trymaven.com"
       }
     ],
     "primary": {
       "type": "button",
       "label": "Get API Key",
-      "href": "https://prod.trymaven.com"
+      "href": "https://app.trymaven.com"
     }
   },
   "navigation": {
@@ -125,7 +125,7 @@
   },
   "api": {
     "mdx": {
-      "server": "https://pciapi.trymaven.com",
+      "server": "https://api.trymaven.com",
       "auth": {
         "method": "bearer"
       }
