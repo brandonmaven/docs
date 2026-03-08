@@ -17,7 +17,7 @@ Add PCI-compliant voice payments to your Retell AI agent. When your agent needs 
     Maven creates a payment session and returns a phone number to transfer the caller to.
   </Step>
   <Step title="Agent transfers the caller">
-    Your agent uses Retell's `transfer_call` function to send the caller to Maven's payment line.
+    Your agent uses a Retell Transfer Call node to send the caller to Maven's payment line.
   </Step>
   <Step title="Payment collected">
     Maven collects the card details, processes the payment, and sends a [webhook](/integrations/webhooks) with the result. The caller is optionally transferred back to your agent via the `callback` number.
@@ -38,8 +38,8 @@ Retell requires manual configuration of custom functions. Here's how to set it u
   <Step title="Create the collect_payment function in Retell">
     In your Retell agent, add a **Custom Function** with:
     - **Name**: `collect_payment`
-    - **URL**: Your webhook URL from step 1
-    - **Description**: `Collect a payment from the caller. Call this when the caller is ready to pay.`
+    - **URL**: Your server URL from step 1
+    - **Description**: `Create a secure payment session. Returns a transfer_number to transfer the caller to.`
     - **Parameters** (paste this JSON):
 
     ```json
@@ -49,6 +49,10 @@ Retell requires manual configuration of custom functions. Here's how to set it u
         "amount": {
           "type": "number",
           "description": "Payment amount in dollars (e.g. 150.00)"
+        },
+        "caller": {
+          "type": "string",
+          "description": "Customer phone number in E.164 format (e.g. +14155551234)"
         },
         "description": {
           "type": "string",
@@ -60,39 +64,23 @@ Retell requires manual configuration of custom functions. Here's how to set it u
         },
         "memory": {
           "type": "string",
-          "description": "Summary of the call so far to carry across the transfer"
+          "description": "Summary of the call context to carry across the transfer"
         }
       },
-      "required": ["amount"]
+      "required": ["amount", "caller"]
     }
     ```
-
-    You do **not** need to add `caller` — Maven auto-fills it from `call.from_number`.
   </Step>
-  <Step title="Create the transfer_call function in Retell">
-    Add another Custom Function:
-    - **Name**: `transfer_call`
-    - **URL**: Your webhook URL from step 1
-    - **Description**: `Transfer the caller to the payment line. Call this after collect_payment returns a transfer_number.`
-    - **Parameters**:
-
-    ```json
-    {
-      "type": "object",
-      "properties": {
-        "transfer_number": {
-          "type": "string",
-          "description": "The phone number returned by collect_payment"
-        }
-      },
-      "required": ["transfer_number"]
-    }
-    ```
+  <Step title="Add a Transfer Call node in Retell">
+    This is a **Transfer Call node**, not a custom function. In your Retell agent's conversation flow, add a Transfer Call node with:
+    - **Routing**: Dynamic — prompt the agent: *"Transfer to the transfer_number returned by collect_payment."*
+    - **Transfer type**: Cold Transfer
+    - **Displayed Caller ID**: User's Number
   </Step>
   <Step title="Add get_session and cancel_session (optional)">
-    You can also add these using the same webhook URL:
+    You can also add these as custom functions using the same server URL:
 
-    **get_session** — Look up a session by phone number:
+    **get_session** — Look up the most recent payment session by phone number. Use after the caller returns from the payment line.
     ```json
     {
       "type": "object",
@@ -106,7 +94,7 @@ Retell requires manual configuration of custom functions. Here's how to set it u
     }
     ```
 
-    **cancel_session** — Cancel a pending session:
+    **cancel_session** — Cancel a pending payment session.
     ```json
     {
       "type": "object",
@@ -123,7 +111,7 @@ Retell requires manual configuration of custom functions. Here's how to set it u
 </Steps>
 
 <Tip>
-**Prompt your agent** to call `collect_payment` first, then use `transfer_call` with the returned `transfer_number`. Example system prompt addition: *"When the customer is ready to pay, call collect_payment with the amount. Then immediately call transfer_call with the transfer_number from the response."*
+**Prompt your agent** to call `collect_payment` first, then the Transfer Call node routes to the returned `transfer_number`. Example system prompt addition: *"When the customer is ready to pay, call collect_payment with the amount and their phone number. Then transfer them to the transfer_number from the response."*
 </Tip>
 
 ## Retell Payload Format
@@ -158,7 +146,7 @@ Creates a payment session. Returns a phone number to transfer the caller to.
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `amount` | number | Yes | Payment amount in dollars (e.g., `150.00`) |
-| `caller` | string | No | Customer phone number in E.164 format. Auto-filled from `call.from_number` if omitted. |
+| `caller` | string | Yes | Customer phone number in E.164 format (e.g., `+14155551234`) |
 | `description` | string | No | Description of what the payment is for |
 | `callback` | string | No | Phone number to transfer the caller back to after payment |
 | `memory` | string | No | Summary of the call context to carry across the transfer |
