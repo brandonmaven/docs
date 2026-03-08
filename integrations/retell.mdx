@@ -14,10 +14,10 @@ Add PCI-compliant voice payments to your Retell AI agent. When your agent needs 
     During a call, your Retell agent calls the `collect_payment` custom function with the amount and caller's phone number.
   </Step>
   <Step title="Maven creates a session">
-    Maven creates a payment session and returns a phone number (or SIP URI) to transfer the caller to.
+    Maven creates a payment session and returns a phone number to transfer the caller to.
   </Step>
   <Step title="Agent transfers the caller">
-    Your agent transfers the caller to the returned number.
+    Your agent uses Retell's `transfer_call` function to send the caller to Maven's payment line.
   </Step>
   <Step title="Payment collected">
     Maven collects the card details, processes the payment, and sends a [webhook](/integrations/webhooks) with the result. The caller is optionally transferred back to your agent via the `callback` number.
@@ -26,17 +26,49 @@ Add PCI-compliant voice payments to your Retell AI agent. When your agent needs 
 
 ## Setup
 
-### Webhook URL
+Retell requires manual configuration of custom functions. Here's how to set it up:
 
-Configure a custom function in your Retell agent that calls Maven's webhook endpoint:
+<Steps>
+  <Step title="Get your webhook token">
+    In the [Maven Dashboard](https://app.trymaven.com), go to your app's **Integrations** tab and generate a Retell webhook token. This gives you a URL like:
+    ```
+    https://api.trymaven.com/integrations/retell/webhook?token=whk_xxx
+    ```
+  </Step>
+  <Step title="Create the collect_payment function in Retell">
+    In your Retell agent, add a **Custom Function** with:
+    - **Name**: `collect_payment`
+    - **URL**: Your webhook URL from step 1
+    - **Description**: "Collect a payment from the caller. Call this when the caller is ready to pay."
+    - **Parameters**:
+      - `amount` (number, required) — Payment amount in dollars
+      - `description` (string, optional) — What the payment is for
+      - `callback` (string, optional) — Phone number to transfer back to after payment
+      - `memory` (string, optional) — Summary of the call so far
 
-```
-https://pciapi.trymaven.com/integrations/retell/webhook?token=YOUR_TOKEN
-```
+    You do **not** need to add `caller` — Maven auto-fills it from `call.from_number`.
+  </Step>
+  <Step title="Create the transfer_call function in Retell">
+    Add another Custom Function:
+    - **Name**: `transfer_call`
+    - **Description**: "Transfer the caller to the payment line. Call this after collect_payment returns a transfer_number."
+    - **Parameters**:
+      - `transfer_number` (string, required) — The phone number returned by collect_payment
+  </Step>
+  <Step title="Add get_session and cancel_session (optional)">
+    You can also add:
+    - **`get_session`** — Look up a session by phone number. Parameter: `phone_number` (string, required)
+    - **`cancel_session`** — Cancel a pending session. Parameter: `session_id` (string, required)
 
-Generate a webhook token from the [Maven Dashboard](https://prod.trymaven.com) in your app's **Integrations** tab. The token encodes your API key, project, gateway, and mode.
+    Both use the same webhook URL.
+  </Step>
+</Steps>
 
-### Retell Payload Format
+<Tip>
+**Prompt your agent** to call `collect_payment` first, then use `transfer_call` with the returned `transfer_number`. Example system prompt addition: *"When the customer is ready to pay, call collect_payment with the amount. Then immediately call transfer_call with the transfer_number from the response."*
+</Tip>
+
+## Retell Payload Format
 
 Retell sends custom function calls as:
 
@@ -45,7 +77,6 @@ Retell sends custom function calls as:
   "name": "collect_payment",
   "args": {
     "amount": 49.99,
-    "caller": "+14155551234",
     "description": "Monthly subscription"
   },
   "call": {
@@ -72,7 +103,7 @@ Creates a payment session. Returns a phone number to transfer the caller to.
 | `caller` | string | No | Customer phone number in E.164 format. Auto-filled from `call.from_number` if omitted. |
 | `description` | string | No | Description of what the payment is for |
 | `callback` | string | No | Phone number to transfer the caller back to after payment |
-| `context` | string | No | Summary of the call context to carry across the transfer |
+| `memory` | string | No | Summary of the call context to carry across the transfer |
 
 **Response:**
 
@@ -80,7 +111,6 @@ Creates a payment session. Returns a phone number to transfer the caller to.
 {
   "session_id": "a1b2c3d4-...",
   "transfer_number": "+18005551234",
-  "sip_uri": "sip:...",
   "message": "Payment session created. Transfer the caller to +18005551234 to securely collect their card details."
 }
 ```
@@ -105,7 +135,11 @@ Looks up the most recent payment session for a caller.
   "currency": "USD",
   "mode": "charge",
   "gateway": "stripe",
-  "caller": "+14155551234"
+  "caller": "+14155551234",
+  "description": "Monthly subscription",
+  "error": null,
+  "created_at": "2026-03-07T10:09:29Z",
+  "completed_at": "2026-03-07T10:10:30Z"
 }
 ```
 
@@ -127,3 +161,18 @@ Cancels a pending payment session.
   "session_id": "a1b2c3d4-..."
 }
 ```
+
+## Session Statuses
+
+| Status | Description |
+|--------|-------------|
+| `created` | Session created, awaiting caller |
+| `collecting-card` | Caller is entering their card number |
+| `collecting-expiry` | Caller is entering expiration date |
+| `collecting-cvv` | Caller is entering CVV |
+| `collecting-postal-code` | Caller is entering postal code (if required) |
+| `processing` | Card submitted to payment gateway |
+| `payment-success` | Payment charged or card tokenized |
+| `payment-failed` | Payment declined or error |
+| `expired` | Session TTL exceeded |
+| `cancelled` | Cancelled by API |

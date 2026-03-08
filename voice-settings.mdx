@@ -13,30 +13,46 @@ Every app uses Maven's default ElevenLabs voice at no extra cost. No setup requi
 
 ## Custom Voices
 
-To use your own voice, model, or provider, add your TTS API key in **Settings > Voice** in the [Maven Dashboard](https://prod.trymaven.com). Once a key is configured, you can customize the voice per app in the app's **Voice** tab.
+To use your own voice, model, or provider:
+
+<Steps>
+  <Step title="Add your TTS API key">
+    Go to **Settings > Voice** in the [Maven Dashboard](https://app.trymaven.com) and add your API key for one or more providers.
+  </Step>
+  <Step title="Configure per app">
+    Navigate to your app's **Voice** tab. Select a TTS provider, model, and voice ID.
+  </Step>
+  <Step title="Save">
+    Your custom voice will be used for all future payment calls on that app.
+  </Step>
+</Steps>
 
 ### Supported Providers
 
-| Provider | Key format |
-|----------|------------|
-| **ElevenLabs** | `sk_...` |
-| **Deepgram** | `dg_...` |
-| **Cartesia** | `sk-...` |
-
-### Per-App Configuration
-
-Once you've added your API key:
-
-1. Go to your app's **Voice** tab
-2. Select a TTS provider
-3. Set the **Model** and **Voice ID** for your chosen provider
-4. Save
+| Provider | Key format | Notes |
+|----------|------------|-------|
+| **ElevenLabs** | `sk_...` | High-quality voices with streaming. Default model: `eleven_flash_v2_5` |
+| **Deepgram** | `dg_...` | Aura TTS voices (e.g., `aura-2-thalia-en`) |
+| **Cartesia** | `sk-...` | Sonic TTS voices. Requires voice ID (UUID from Cartesia dashboard) |
 
 <Warning>
-  Without your own API key, voice customization is locked. You'll see the default voice settings and cannot change the model or voice ID.
+Without your own API key, voice customization is locked. You'll see the default voice settings and cannot change the model or voice ID.
 </Warning>
 
-## Custom Greeting
+## AI Agent Mode
+
+By default, Maven uses an AI agent (powered by GPT-4o-mini) to have natural conversations during card collection. The agent:
+
+- Greets the caller naturally
+- Acknowledges each field (e.g., "Got your Visa! Now please provide your expiration date.")
+- Handles errors conversationally (e.g., "That card number doesn't look right, let's try again.")
+- Confirms payment success
+
+If the agent times out or encounters an error, Maven falls back to static template messages automatically.
+
+You can disable AI agent mode per app by toggling **AI Conversation** off in your app's Voice tab. When disabled, Maven uses deterministic template messages for all interactions.
+
+## Custom Greetings
 
 Customize the greeting message your callers hear when they connect to the payment line. Set greetings per app in the **Voice** tab.
 
@@ -65,3 +81,24 @@ Use these placeholders in your custom greeting and Maven will replace them with 
 | `{{amount}}` | Payment amount (e.g., `$49.99`) |
 | `{{description}}` | Charge description (if provided) |
 | `{{mode}}` | `"payment"` for charge, `"card on file"` for tokenize |
+
+## Transfer Message
+
+Customize the message spoken before transferring the caller back to your agent. This only plays when a `callback` number is provided in the session. Set it per app in the **Voice** tab.
+
+Default: *"Please stay on the line while we connect you back."*
+
+## Input Modes
+
+### Voice + Keypad (default)
+
+Callers can speak their card details or enter them on their phone's keypad. Maven uses speech recognition (ASR) and DTMF detection simultaneously. Once the caller starts using one method, it locks to that mode for the rest of the call.
+
+### Keypad Only (DTMF)
+
+Enable **DTMF Only** in your app settings to restrict input to keypad entry only. This disables speech recognition entirely. Useful for noisy environments or when you want a more predictable experience.
+
+## Postal Code
+
+By default, Maven collects card number, expiry, and CVV. Enable **Require Postal Code** in your app settings to also collect the caller's ZIP/postal code for address verification (AVS).
+
