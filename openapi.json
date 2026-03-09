@@ -262,7 +262,7 @@
             "in": "query",
             "required": false,
             "description": "Payment gateway",
-            "schema": { "type": "string", "enum": ["stripe", "authorizenet", "braintree"] }
+            "schema": { "type": "string", "enum": ["stripe", "authorizenet", "braintree", "shift4"] }
           }
         ],
         "requestBody": {
@@ -351,7 +351,7 @@
             "in": "query",
             "required": false,
             "description": "Payment gateway",
-            "schema": { "type": "string", "enum": ["stripe", "authorizenet", "braintree"] }
+            "schema": { "type": "string", "enum": ["stripe", "authorizenet", "braintree", "shift4"] }
           }
         ],
         "requestBody": {
@@ -430,7 +430,7 @@
           "caller": { "type": "string", "description": "Phone number in E.164 format (e.g. +14155551234)" },
           "amount": { "type": "number", "minimum": 0, "description": "Amount to charge (must be > 0 for charge mode, can be 0 for tokenize)" },
           "mode": { "type": "string", "enum": ["charge", "tokenize"], "description": "Payment mode" },
-          "gateway": { "type": "string", "enum": ["stripe", "authorizenet", "braintree"], "description": "Payment gateway" },
+          "gateway": { "type": "string", "enum": ["stripe", "authorizenet", "braintree", "shift4"], "description": "Payment gateway" },
           "description": { "type": "string", "maxLength": 500, "description": "What the customer is paying for (e.g. 'Monthly subscription', 'Order #1234')" },
           "callback": { "type": "string", "description": "Callback phone number for transfer-back after payment" },
           "memory": { "type": "string", "description": "Summary of the call context carried across the transfer. Pass the context from the original voice agent call so it is available when the caller is transferred back after payment." }
@@ -462,7 +462,7 @@
           "description": { "type": "string", "description": "Charge description" },
           "caller": { "type": "string", "description": "Customer phone in E.164 format" },
           "project_slug": { "type": "string", "description": "Project slug" },
-          "gateway": { "type": "string", "enum": ["stripe", "authorizenet", "braintree"], "description": "Payment gateway" },
+          "gateway": { "type": "string", "enum": ["stripe", "authorizenet", "braintree", "shift4"], "description": "Payment gateway" },
           "callback": { "type": "string", "description": "Callback phone number" },
           "memory": { "type": "string", "description": "Summary of the call context carried across the transfer" },
           "created_at": { "type": "string", "format": "date-time" },
@@ -488,7 +488,10 @@
           "authnet_payment_profile_id": { "type": "string", "description": "Authorize.net CIM Payment Profile ID (tokenize mode)" },
           "braintree_transaction_id": { "type": "string", "description": "Braintree Transaction ID" },
           "braintree_customer_id": { "type": "string", "description": "Braintree Customer ID (tokenize mode)" },
-          "braintree_payment_method_token": { "type": "string", "description": "Braintree Payment Method Token (tokenize mode)" }
+          "braintree_payment_method_token": { "type": "string", "description": "Braintree Payment Method Token (tokenize mode)" },
+          "shift4_charge_id": { "type": "string", "description": "Shift4 Charge ID" },
+          "shift4_customer_id": { "type": "string", "description": "Shift4 Customer ID" },
+          "shift4_card_id": { "type": "string", "description": "Shift4 Card ID" }
         }
       },
       "ErrorDetail": {
