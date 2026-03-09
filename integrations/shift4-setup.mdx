@@ -1,0 +1,96 @@
+---
+title: Shift4 Setup
+description: Connect your Shift4 account to Maven
+---
+
+# Connecting Shift4
+
+Maven connects to Shift4 using your Public Key and Secret Key. These credentials allow Maven to create charges and vault cards on your behalf.
+
+## Prerequisites
+
+- A Shift4 account
+- Public Key and Secret Key
+- A Maven app
+
+## Getting Your Credentials
+
+<Steps>
+  <Step title="Log in to Shift4">
+    Go to [Shift4 Dashboard](https://dev.shift4.com/) and log in.
+  </Step>
+  <Step title="Navigate to API Keys">
+    Click **API Keys** in the left sidebar.
+  </Step>
+  <Step title="Copy Credentials">
+    You'll see your:
+    - **Public Key** (starts with `pk_`)
+    - **Secret Key** (starts with `sk_`)
+
+    Use the **Test** keys for sandbox testing and **Live** keys for production.
+  </Step>
+</Steps>
+
+## Connecting in Maven
+
+<Steps>
+  <Step title="Go to Payments">
+    In the [Maven Dashboard](https://app.trymaven.com), navigate to your app and click the **Payments** tab.
+  </Step>
+  <Step title="Click Connect Shift4">
+    Click the Shift4 card and enter your credentials.
+  </Step>
+  <Step title="Enter Credentials">
+    - **Public Key**: Your Shift4 Public Key
+    - **Secret Key**: Your Shift4 Secret Key
+  </Step>
+  <Step title="Save">
+    Click **Connect**. Maven will validate the credentials and save them.
+  </Step>
+</Steps>
+
+## Sandbox Testing
+
+For testing, use your **Test** API keys from the Shift4 dashboard. Test keys start with `pk_test_` and `sk_test_`.
+
+Use test credentials with `mvn_test_` API keys to test without real charges.
+
+## Processor Response Fields
+
+### Charge Mode
+
+| Field | Description |
+|-------|-------------|
+| `charge_id` | Shift4 charge ID |
+| `customer_id` | Shift4 customer ID |
+| `card_id` | Shift4 card ID |
+| `card_brand` | Card brand |
+| `card_last4` | Last 4 digits |
+
+### Tokenize Mode (Vault)
+
+| Field | Description |
+|-------|-------------|
+| `customer_id` | Shift4 customer ID |
+| `card_id` | Shift4 card ID |
+| `card_brand` | Card brand |
+| `card_last4` | Last 4 digits |
+
+## Using Tokenized Cards
+
+After tokenizing, use the customer and card IDs to create charges via the Shift4 API:
+
+```python
+import httpx
+
+resp = httpx.post(
+    "https://api.shift4.com/charges",
+    auth=("sk_live_your_secret_key", ""),
+    data={
+        "amount": 4999,
+        "currency": "USD",
+        "customerId": "cust_xxx",  # from customer_id
+        "card": "card_xxx",        # from card_id
+    },
+)
+```
