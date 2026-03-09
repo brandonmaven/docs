@@ -28,7 +28,7 @@ All webhook payloads share the same top-level fields. The `processor` object var
   <Tab title="Stripe (Charge)">
     ```json
     {
-      "event": "payment.completed",
+      "event": "payment.success",
       "session_id": "a1b2c3d4-...",
       "status": "payment-success",
       "amount": 4999,
@@ -52,7 +52,7 @@ All webhook payloads share the same top-level fields. The `processor` object var
   <Tab title="Stripe (Tokenize)">
     ```json
     {
-      "event": "payment.completed",
+      "event": "payment.success",
       "session_id": "a1b2c3d4-...",
       "status": "payment-success",
       "amount": 4999,
@@ -75,7 +75,7 @@ All webhook payloads share the same top-level fields. The `processor` object var
   <Tab title="Authorize.net (Charge)">
     ```json
     {
-      "event": "payment.completed",
+      "event": "payment.success",
       "session_id": "a1b2c3d4-...",
       "status": "payment-success",
       "amount": 4999,
@@ -97,7 +97,7 @@ All webhook payloads share the same top-level fields. The `processor` object var
   <Tab title="Authorize.net (Tokenize)">
     ```json
     {
-      "event": "payment.completed",
+      "event": "payment.success",
       "session_id": "a1b2c3d4-...",
       "status": "payment-success",
       "amount": 4999,
@@ -119,7 +119,7 @@ All webhook payloads share the same top-level fields. The `processor` object var
   <Tab title="Braintree (Charge)">
     ```json
     {
-      "event": "payment.completed",
+      "event": "payment.success",
       "session_id": "a1b2c3d4-...",
       "status": "payment-success",
       "amount": 4999,
@@ -143,7 +143,7 @@ All webhook payloads share the same top-level fields. The `processor` object var
   <Tab title="Braintree (Tokenize)">
     ```json
     {
-      "event": "payment.completed",
+      "event": "payment.success",
       "session_id": "a1b2c3d4-...",
       "status": "payment-success",
       "amount": 4999,
@@ -162,19 +162,64 @@ All webhook payloads share the same top-level fields. The `processor` object var
     }
     ```
   </Tab>
+  <Tab title="Shift4 (Charge)">
+    ```json
+    {
+      "event": "payment.success",
+      "session_id": "a1b2c3d4-...",
+      "status": "payment-success",
+      "amount": 4999,
+      "currency": "USD",
+      "mode": "charge",
+      "gateway": "shift4",
+      "caller": "+14155551234",
+      "card_brand": "visa",
+      "card_last4": "4242",
+      "processor": {
+        "charge_id": "char_xxx",
+        "customer_id": "cust_xxx",
+        "card_id": "card_xxx",
+        "card_brand": "visa",
+        "card_last4": "4242"
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Shift4 (Tokenize)">
+    ```json
+    {
+      "event": "payment.success",
+      "session_id": "a1b2c3d4-...",
+      "status": "payment-success",
+      "amount": 4999,
+      "currency": "USD",
+      "mode": "tokenize",
+      "gateway": "shift4",
+      "caller": "+14155551234",
+      "card_brand": "visa",
+      "card_last4": "4242",
+      "processor": {
+        "customer_id": "cust_xxx",
+        "card_id": "card_xxx",
+        "card_brand": "visa",
+        "card_last4": "4242"
+      }
+    }
+    ```
+  </Tab>
 </Tabs>
 
 ### Field Reference
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `event` | string | Always `"payment.completed"` |
+| `event` | string | `"payment.success"` or `"payment.failed"` |
 | `session_id` | string | Session UUID |
 | `status` | string | `"payment-success"` or `"payment-failed"` |
 | `amount` | integer | Amount in **cents** (e.g., `4999` = $49.99) |
 | `currency` | string | Currency code (e.g., `"USD"`) |
 | `mode` | string | `"charge"` or `"tokenize"` |
-| `gateway` | string | `"stripe"`, `"authorizenet"`, or `"braintree"` |
+| `gateway` | string | `"stripe"`, `"authorizenet"`, `"braintree"`, or `"shift4"` |
 | `caller` | string | Caller phone number in E.164 format |
 | `card_brand` | string \| null | Card brand (visa, mastercard, amex, etc.) |
 | `card_last4` | string \| null | Last 4 digits of the card |
@@ -344,6 +389,56 @@ The `processor` object contains different fields depending on the gateway and mo
     |-------|-------------|
     | `customer_id` | Braintree customer ID |
     | `payment_method_token` | Braintree payment method token |
+    | `card_brand` | Card brand |
+    | `card_last4` | Last 4 digits |
+    | `postal_code` | Billing ZIP/postal code (if collected) |
+    | `exp_month` | Card expiration month (if collected) |
+    | `exp_year` | Card expiration year (if collected) |
+  </Tab>
+
+  <Tab title="Shift4">
+    **Charge mode:**
+    ```json
+    {
+      "charge_id": "char_xxx",
+      "customer_id": "cust_xxx",
+      "card_id": "card_xxx",
+      "card_brand": "visa",
+      "card_last4": "4242",
+      "postal_code": "90210",
+      "exp_month": 12,
+      "exp_year": 2027
+    }
+    ```
+
+    | Field | Description |
+    |-------|-------------|
+    | `charge_id` | Shift4 charge ID |
+    | `customer_id` | Shift4 customer ID |
+    | `card_id` | Shift4 card ID |
+    | `card_brand` | Card brand |
+    | `card_last4` | Last 4 digits |
+    | `postal_code` | Billing ZIP/postal code (if collected) |
+    | `exp_month` | Card expiration month (if collected) |
+    | `exp_year` | Card expiration year (if collected) |
+
+    **Tokenize mode:**
+    ```json
+    {
+      "customer_id": "cust_xxx",
+      "card_id": "card_xxx",
+      "card_brand": "visa",
+      "card_last4": "4242",
+      "postal_code": "90210",
+      "exp_month": 12,
+      "exp_year": 2027
+    }
+    ```
+
+    | Field | Description |
+    |-------|-------------|
+    | `customer_id` | Shift4 customer ID |
+    | `card_id` | Shift4 card ID |
     | `card_brand` | Card brand |
     | `card_last4` | Last 4 digits |
     | `postal_code` | Billing ZIP/postal code (if collected) |
