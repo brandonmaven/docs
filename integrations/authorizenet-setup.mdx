@@ -52,7 +52,31 @@ Maven connects to Authorize.net using your API Login ID and Transaction Key. The
 
 For testing, use [Authorize.net Sandbox](https://sandbox.authorize.net/) credentials. Create a sandbox account at [developer.authorize.net](https://developer.authorize.net/).
 
-Use sandbox credentials with `mvn_test_` API keys to test without real charges.
+Use sandbox credentials with `mvn_test_` API keys to test without real charges. Sandbox responses include real `transaction_id`, `auth_code`, AVS, CVV, CAVV, and network transaction ID values, so the payload your code receives in test mode matches what you'll see in production.
+
+## Capture Mode
+
+Maven supports two capture modes for Authorize.net charges. The setting is per-app and can be changed any time from the **Payments** tab on the Authorize.net card.
+
+| Mode | Behavior |
+|------|----------|
+| **Auto Capture** (default) | Maven sends `authCaptureTransaction`. Funds are authorized and captured immediately. This is the standard flow. |
+| **Authorize Only** | Maven sends `authOnlyTransaction`. Funds are placed on hold but **not** captured. You settle the charge later from your Authorize.net dashboard or via your own `priorAuthCaptureTransaction` API call, using the `transaction_id` Maven returns in the webhook. |
+
+**When to use Authorize Only:**
+
+- Hotels, car rentals, and other businesses that authorize on booking and capture on checkout
+- Service businesses where the final amount may change before fulfillment
+- Any flow where you want to verify the card and reserve funds without immediately moving money
+
+**Important notes:**
+
+- Authorizations typically expire **30 days** after creation if not captured. Holds beyond that are released.
+- Once captured, the captured amount is locked and cannot be increased.
+- You can capture for **less than** the original auth amount (partial capture).
+- Maven does not currently send a follow-up webhook when you capture in Authorize.net — you track captures on your side.
+
+When Authorize Only is enabled, the session reaches the new terminal status `payment-authorized` instead of `payment-success`, and the webhook payload includes `processor.auth_only: true`.
 
 ## Processor Response Fields
 
@@ -60,10 +84,58 @@ Use sandbox credentials with `mvn_test_` API keys to test without real charges.
 
 | Field | Description |
 |-------|-------------|
-| `authnet_transaction_id` | Transaction ID |
-| `authnet_auth_code` | Authorization code |
+| `transaction_id` | Authorize.net transaction ID. In Authorize Only mode, use this as the `refTransId` to capture later. |
+| `auth_code` | Authorization code from the issuing bank |
+| `response_code` | Authorize.net response code (`1`=Approved, `2`=Declined, `3`=Error, `4`=Held for review) |
+| `avs_result_code` | AVS (Address Verification System) match result |
+| `cvv_result_code` | CVV match result |
+| `cavv_result_code` | CAVV (3D Secure) result |
+| `network_trans_id` | Card network transaction ID (Visa/Mastercard) — used for card-on-file flows and certain refunds |
+| `auth_only` | `true` when the charge was made in Authorize Only mode (auth without capture) |
 | `card_brand` | Card brand |
 | `card_last4` | Last 4 digits |
+
+### Result Code Cheat Sheet
+
+**`response_code`** — overall transaction outcome:
+
+| Code | Meaning |
+|------|---------|
+| `1` | Approved |
+| `2` | Declined |
+| `3` | Error |
+| `4` | Held for review (FDS filter) |
+
+**`avs_result_code`** — billing address verification:
+
+| Code | Meaning |
+|------|---------|
+| `Y` | Address and zip both matched (best) |
+| `A` | Address matched, zip didn't |
+| `Z` | Zip matched, address didn't |
+| `N` | Neither matched |
+| `U` | AVS unavailable |
+| `P` | Not applicable for this card type |
+
+**`cvv_result_code`** — CVV match:
+
+| Code | Meaning |
+|------|---------|
+| `M` | Match |
+| `N` | No match |
+| `P` | Not processed |
+| `S` | Should be on the card but wasn't submitted |
+| `U` | Issuer doesn't support CVV verification |
+
+**`cavv_result_code`** — 3D Secure / cardholder authentication:
+
+| Code | Meaning |
+|------|---------|
+| (blank) | CAVV not validated |
+| `0` | Not validated, possibly not supplied |
+| `1` | Failed validation |
+| `2` | Passed validation |
+| `3`/`4` | Could not be performed |
 
 ### Tokenize Mode (CIM)
 

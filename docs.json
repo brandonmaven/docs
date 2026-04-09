@@ -58,6 +58,7 @@
               "quickstart",
               "authentication",
               "integrations/webhooks",
+              "testing",
               "voice-settings"
             ]
           },

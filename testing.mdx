@@ -1,0 +1,131 @@
+---
+title: Testing
+description: Test your Maven integration end-to-end without reading real card numbers
+---
+
+# Testing Your Integration
+
+Maven gives you a few tools for testing your integration end-to-end without having to read out a real card number on every call.
+
+## Test Mode
+
+Any session created with a `mvn_test_` API key runs in **test mode**:
+
+- All gateway charges go to the gateway's sandbox environment (Stripe test mode, Authorize.net sandbox, Braintree sandbox, Shift4 test mode)
+- No real money moves
+- Webhooks fire normally so you can test your downstream flow
+- Sessions are tagged with `environment: "test"` in the database and the API response
+
+Use test mode for development, CI, and any integration testing.
+
+## The "mango" Magic Word
+
+Reading out a 16-digit card number plus expiry plus CVV is tedious when you're testing your downstream flow over and over. Maven includes a shortcut: **in test mode only**, when the caller says the word **"mango"** at any point during the call, Maven instantly completes the session as a successful payment without going through card collection or hitting the gateway.
+
+### How it works
+
+1. You create a test session as usual (via `POST /v1/sessions` with a `mvn_test_` API key)
+2. You call into the session
+3. At any point — during the greeting, while the bot is asking for the card number, expiry, CVV — you say **"mango"**
+4. Maven immediately:
+   - Marks the session as `payment-success`
+   - Inserts a synthetic transaction record with a fake `transaction_id` like `test_skip_1775720123456`
+   - Speaks the normal success TTS message
+   - **Fires your webhook** with `status: "payment-success"` and the synthetic transaction details
+   - **Runs the transfer-back** if the session has a `callback` configured
+   - Hangs up the call
+
+That's it — your full integration runs end-to-end (TTS, transfer, webhook delivery, your own webhook handler) without any real card processing.
+
+### Webhook payload
+
+The webhook you receive looks like a normal `payment-success` webhook, with `processor.test_skip: true` to indicate it was synthetic:
+
+```json
+{
+  "event": "payment.success",
+  "session_id": "a1b2c3d4-...",
+  "status": "payment-success",
+  "amount": 4999,
+  "currency": "USD",
+  "mode": "charge",
+  "gateway": "authorizenet",
+  "caller": "+14155551234",
+  "card_brand": "visa",
+  "card_last4": "0000",
+  "processor": {
+    "transaction_id": "test_skip_1775720123456",
+    "auth_code": "TESTOK",
+    "test_skip": true,
+    "card_brand": "visa",
+    "card_last4": "0000"
+  }
+}
+```
+
+### What gets bypassed
+
+When you say "mango" in test mode, the following are **skipped entirely**:
+
+- VGS card tokenization
+- Gateway charge (Authorize.net, Stripe, Braintree, Shift4)
+- Card validation (Luhn, brand detection, expiry)
+- Retry logic
+- Field-by-field collection state machine
+
+What still runs normally:
+
+- Success TTS message
+- Post-payment transfer-back to your callback number/SIP URI
+- Webhook delivery
+- DB session + transaction records
+
+### Production safety
+
+The mango shortcut is **gated on test mode**. If a real caller says "mango" during a production call, nothing happens — the word is treated as ordinary speech and the bot continues asking for the card number. There is no way to trigger the shortcut on a live API key.
+
+The detection uses a strict whole-word regex (`\bmango\b`), so partial matches don't trigger:
+
+| Caller says | Triggers? |
+|-------------|-----------|
+| "mango" | ✅ |
+| "Mango." | ✅ (case-insensitive, punctuation OK) |
+| "I want a mango please" | ✅ (whole word in a sentence) |
+| "mang" | ❌ (not a complete word) |
+| "mangoes" | ❌ |
+
+## Sandbox Test Cards
+
+If you want to actually run a charge through the gateway sandbox (instead of using the mango shortcut), use the test card numbers documented by each gateway:
+
+| Gateway | Test card |
+|---------|-----------|
+| Stripe | `4242 4242 4242 4242`, any future expiry, any CVV |
+| Authorize.net | `4111 1111 1111 1111`, any future expiry, any CVV |
+| Braintree | `4111 1111 1111 1111`, any future expiry, any CVV |
+| Shift4 | `4242 4242 4242 4242`, any future expiry, any CVV |
+
+Most gateways have additional cards that simulate specific decline reasons (insufficient funds, expired, etc.) — see the gateway's documentation for the full list.
+
+### Authorize.net sandbox responses
+
+Maven routes test-mode Authorize.net charges to the real sandbox environment (`apitest.authorize.net`) and returns the **actual response data** from the sandbox processor — real `transaction_id`, `auth_code`, AVS/CVV/CAVV result codes, and `network_trans_id`. Earlier versions of Maven returned mocked values (`transaction_id: "0"`, `auth_code: "000000"`); this is no longer the case.
+
+This means you can fully test your Authorize.net integration in sandbox — including the [Authorize Only capture flow](/integrations/authorizenet-setup#capture-mode) — and the payload you receive in sandbox matches exactly what you'll see in production.
+
+## Tips
+
+<AccordionGroup>
+  <Accordion title="Use a webhook inspection service">
+    During development, point your webhook URL at a service like [webhook.site](https://webhook.site) so you can inspect the exact payload Maven sends without writing a server.
+  </Accordion>
+  <Accordion title="Mango works at any point in the call">
+    You don't have to wait for any particular field — say "mango" during the greeting, in the middle of reading the card number, or during expiry collection. The shortcut fires immediately.
+  </Accordion>
+  <Accordion title="Mango respects transfer-back">
+    If your session has a `callback` configured, mango still triggers the post-payment transfer. This is the easiest way to verify your full call flow including the bridge back to your agent.
+  </Accordion>
+  <Accordion title="Live mode never triggers mango">
+    There is no way to enable the magic word in production. If you need to "test in production" (e.g., to verify a deploy), you need a real card.
+  </Accordion>
+</AccordionGroup>

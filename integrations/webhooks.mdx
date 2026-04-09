@@ -9,7 +9,15 @@ Maven sends an HTTP POST to your webhook URL when a payment session completes or
 
 ## When Webhooks Fire
 
-Webhooks are sent when a session reaches `payment-success` or `payment-failed`. They are **not** sent for `expired` or `cancelled` sessions — poll the [GET session endpoint](/api-reference/overview) for those.
+Webhooks are sent when a session reaches a terminal payment status:
+
+| Status | When |
+|--------|------|
+| `payment-success` | Charge was authorized **and captured** immediately (default) |
+| `payment-authorized` | Authorize.net auth-only charge succeeded — funds held but **not** captured. You settle the auth yourself in your gateway dashboard or via the gateway's API. |
+| `payment-failed` | Charge declined, gateway error, or card collection hit max retries / max nudges |
+
+Webhooks are **not** sent for `expired`, `cancelled`, or `abandoned` sessions — poll the [GET session endpoint](/api-reference/overview) for those.
 
 ## Configuring Your Webhook URL
 
@@ -86,13 +94,49 @@ All webhook payloads share the same top-level fields. The `processor` object var
       "card_brand": "visa",
       "card_last4": "4242",
       "processor": {
-        "transaction_id": "123456789",
-        "auth_code": "ABC123",
+        "transaction_id": "80053776892",
+        "auth_code": "D2U7TY",
+        "response_code": "1",
+        "avs_result_code": "Y",
+        "cvv_result_code": "M",
+        "cavv_result_code": "2",
+        "network_trans_id": "V1NZI0NLBXIKFMK2RAC1YCV",
+        "auth_only": false,
         "card_brand": "visa",
         "card_last4": "4242"
       }
     }
     ```
+  </Tab>
+  <Tab title="Authorize.net (Auth-Only)">
+    ```json
+    {
+      "event": "payment.authorized",
+      "session_id": "a1b2c3d4-...",
+      "status": "payment-authorized",
+      "amount": 4999,
+      "currency": "USD",
+      "mode": "charge",
+      "gateway": "authorizenet",
+      "caller": "+14155551234",
+      "card_brand": "visa",
+      "card_last4": "4242",
+      "processor": {
+        "transaction_id": "80053776894",
+        "auth_code": "P60ZS3",
+        "response_code": "1",
+        "avs_result_code": "Y",
+        "cvv_result_code": "M",
+        "cavv_result_code": "2",
+        "network_trans_id": "DTUM1U4E6VT99F6A5KZQ0SS",
+        "auth_only": true,
+        "card_brand": "visa",
+        "card_last4": "4242"
+      }
+    }
+    ```
+
+    Funds are held but not captured. Use `processor.transaction_id` to settle the charge later in your Authorize.net dashboard or via your own `priorAuthCaptureTransaction` API call. See [Authorize.net Setup → Capture Mode](/integrations/authorizenet-setup#capture-mode).
   </Tab>
   <Tab title="Authorize.net (Tokenize)">
     ```json
@@ -213,9 +257,9 @@ All webhook payloads share the same top-level fields. The `processor` object var
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `event` | string | `"payment.success"` or `"payment.failed"` |
+| `event` | string | `"payment.success"`, `"payment.authorized"`, or `"payment.failed"` |
 | `session_id` | string | Session UUID |
-| `status` | string | `"payment-success"` or `"payment-failed"` |
+| `status` | string | `"payment-success"`, `"payment-authorized"`, or `"payment-failed"` |
 | `amount` | integer | Amount in **cents** (e.g., `4999` = $49.99) |
 | `currency` | string | Currency code (e.g., `"USD"`) |
 | `mode` | string | `"charge"` or `"tokenize"` |
@@ -300,8 +344,14 @@ The `processor` object contains different fields depending on the gateway and mo
     **Charge mode:**
     ```json
     {
-      "transaction_id": "123456789",
-      "auth_code": "ABC123",
+      "transaction_id": "80053776892",
+      "auth_code": "D2U7TY",
+      "response_code": "1",
+      "avs_result_code": "Y",
+      "cvv_result_code": "M",
+      "cavv_result_code": "2",
+      "network_trans_id": "V1NZI0NLBXIKFMK2RAC1YCV",
+      "auth_only": false,
       "card_brand": "visa",
       "card_last4": "4242",
       "postal_code": "90210",
@@ -312,8 +362,14 @@ The `processor` object contains different fields depending on the gateway and mo
 
     | Field | Description |
     |-------|-------------|
-    | `transaction_id` | Authorize.net transaction ID |
-    | `auth_code` | Authorization code |
+    | `transaction_id` | Authorize.net transaction ID. In Authorize Only mode, use this as the `refTransId` for `priorAuthCaptureTransaction`. |
+    | `auth_code` | Authorization code from the issuing bank |
+    | `response_code` | Authorize.net response code (`1`=Approved, `2`=Declined, `3`=Error, `4`=Held for review) |
+    | `avs_result_code` | AVS (Address Verification System) match result. `Y` = address+zip match. |
+    | `cvv_result_code` | CVV match result. `M` = match. |
+    | `cavv_result_code` | CAVV (3D Secure) result. `2` = passed. |
+    | `network_trans_id` | Card network transaction ID (Visa/Mastercard) — needed for card-on-file flows and certain refunds |
+    | `auth_only` | `true` when the project is set to **Authorize Only** capture mode (auth without capture). See [Capture Mode](/integrations/authorizenet-setup#capture-mode). |
     | `card_brand` | Card brand |
     | `card_last4` | Last 4 digits |
     | `postal_code` | Billing ZIP/postal code (if collected) |
