@@ -42,20 +42,6 @@ Brand the widget to match your chat UI — colors, text, fields, sizing — all 
   </Accordion>
 </AccordionGroup>
 
-## Per-session overrides (advanced)
+## Running multiple brands?
 
-If you run a platform that serves multiple downstream brands, you can override theme/labels/fields per session in the `POST /v1/widget-sessions` body:
-
-```json
-{
-  "project": "my-app",
-  "gateway": "stripe",
-  "amount_cents": 10000,
-  "theme":  { "primary": "#635BFF" },
-  "labels": { "pay_button": "Pay Now" }
-}
-```
-
-Any field you don't pass falls back to the project's saved defaults.
-
-For most merchants, the dashboard is all you need.
+If you serve multiple downstream brands from one Maven account (e.g. a platform like VAPI or Retell reselling Maven to their customers), create one project per brand. Each project has its own saved theme, labels, and fields — just pass the right project slug in your `POST /v1/widget-sessions` call for each customer.
