@@ -117,6 +117,14 @@
             ]
           },
           {
+            "group": "Widget Sessions",
+            "openapi": "openapi.json",
+            "pages": [
+              "POST /v1/widget-sessions",
+              "GET /v1/widget-sessions/{session_id}"
+            ]
+          },
+          {
             "group": "Apps",
             "openapi": "openapi.json",
             "pages": [
