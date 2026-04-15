@@ -7,6 +7,10 @@ description: Receive real-time notifications when payment sessions complete
 
 Maven sends an HTTP POST to your webhook URL when a payment session completes or fails. This is the recommended way to get payment results back into your system.
 
+<Info>
+  **Voice and chat widget both use the same webhook.** One webhook URL per project, one handler in your code — it processes both channels. Use the `source` field (`"voice"` or `"chat"`) if you need to branch.
+</Info>
+
 ## When Webhooks Fire
 
 Webhooks are sent when a session reaches a terminal payment status:
@@ -15,7 +19,7 @@ Webhooks are sent when a session reaches a terminal payment status:
 |--------|------|
 | `payment-success` | Charge was authorized **and captured** immediately (default) |
 | `payment-authorized` | Authorize.net auth-only charge succeeded — funds held but **not** captured. You settle the auth yourself in your gateway dashboard or via the gateway's API. |
-| `payment-failed` | Charge declined, gateway error, or card collection hit max retries / max nudges |
+| `payment-failed` | Charge declined or gateway error |
 
 Webhooks are **not** sent for `expired`, `cancelled`, or `abandoned` sessions — poll the [GET session endpoint](/api-reference/overview) for those.
 
@@ -31,6 +35,66 @@ Set a webhook URL per app in the [Maven Dashboard](https://app.trymaven.com):
 ## Payload Format
 
 All webhook payloads share the same top-level fields. The `processor` object varies by gateway and mode — see [Processor Fields by Gateway](#processor-fields-by-gateway) for the full specs.
+
+### Voice vs Chat
+
+The payload is **almost identical for voice and chat** — only two fields differ:
+
+- **`source`** is `"voice"` or `"chat"` — tells you which channel collected the payment
+- **`caller`** is the customer's phone number for voice sessions, and `null` for chat sessions (no phone)
+
+Everything else — `event`, `status`, `processor`, `card_brand`, `card_last4`, error codes — is the same. A single webhook handler works for both.
+
+<Tabs>
+  <Tab title="Chat (Widget)">
+    ```json
+    {
+      "event": "payment.success",
+      "session_id": "a1b2c3d4-...",
+      "status": "payment-success",
+      "amount": 4999,
+      "currency": "USD",
+      "mode": "charge",
+      "gateway": "stripe",
+      "source": "chat",
+      "caller": null,
+      "card_brand": "visa",
+      "card_last4": "4242",
+      "processor": {
+        "payment_intent_id": "pi_xxx",
+        "charge_id": "ch_xxx",
+        "card_brand": "visa",
+        "card_last4": "4242"
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Voice (Phone)">
+    ```json
+    {
+      "event": "payment.success",
+      "session_id": "a1b2c3d4-...",
+      "status": "payment-success",
+      "amount": 4999,
+      "currency": "USD",
+      "mode": "charge",
+      "gateway": "stripe",
+      "source": "voice",
+      "caller": "+14155551234",
+      "card_brand": "visa",
+      "card_last4": "4242",
+      "processor": {
+        "payment_intent_id": "pi_xxx",
+        "charge_id": "ch_xxx",
+        "card_brand": "visa",
+        "card_last4": "4242"
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Full examples by gateway
 
 <Tabs>
   <Tab title="Stripe (Charge)">
@@ -522,15 +586,17 @@ async def maven_webhook(request: Request):
     payload = await request.json()
     session_id = payload["session_id"]
     status = payload["status"]
+    source = payload.get("source", "voice")  # "voice" or "chat"
 
     if status == "payment-success":
         card_last4 = payload.get("card_last4")
+        caller = payload.get("caller")  # phone for voice, None for chat
         processor = payload.get("processor", {})
         # Update your order, send receipt, etc.
-        await handle_payment_success(session_id, processor)
+        await handle_payment_success(session_id, processor, source=source)
     elif status == "payment-failed":
         error = payload.get("error", {})
-        await handle_payment_failure(session_id, error)
+        await handle_payment_failure(session_id, error, source=source)
 
     return {"status": "ok"}
 ```
