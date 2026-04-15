@@ -264,7 +264,8 @@ All webhook payloads share the same top-level fields. The `processor` object var
 | `currency` | string | Currency code (e.g., `"USD"`) |
 | `mode` | string | `"charge"` or `"tokenize"` |
 | `gateway` | string | `"stripe"`, `"authorizenet"`, `"braintree"`, or `"shift4"` |
-| `caller` | string | Caller phone number in E.164 format |
+| `source` | string | `"voice"` or `"chat"` — which channel collected the payment |
+| `caller` | string \| null | Caller phone number in E.164 format (voice only; `null` for chat) |
 | `card_brand` | string \| null | Card brand (visa, mastercard, amex, etc.) |
 | `card_last4` | string \| null | Last 4 digits of the card |
 | `processor` | object \| null | Gateway-specific response fields (see below) |

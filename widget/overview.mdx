@@ -1,0 +1,97 @@
+---
+title: Chat Payment Widget
+description: Collect payments inline in your chatbot or web app — PCI-compliant in 10 lines of code
+---
+
+The Maven chat payment widget lets your chatbot or web app collect card payments without redirecting the customer, sending them to Stripe Checkout, or handling card data yourself. Drop in a `<script>` tag and a `Maven.createPayment()` call, and the customer enters their card into a secure iframe rendered on Maven's domain.
+
+<CardGroup cols={3}>
+  <Card title="Inline in chat" icon="message-square">
+    Renders as a message in your chatbot UI. No redirects.
+  </Card>
+  <Card title="PCI Compliant" icon="shield-check">
+    Card data never touches your servers. Merchant stays SAQ-A.
+  </Card>
+  <Card title="Any gateway" icon="credit-card">
+    Stripe, Authorize.net, Braintree, or Shift4 — same code.
+  </Card>
+</CardGroup>
+
+## When to use the widget vs voice
+
+| | Widget | Voice |
+|---|---|---|
+| **Customer experience** | Types card into a form | Reads card aloud on a phone call |
+| **Best for** | Chatbots, in-app checkout, support flows | IVR, phone support, outbound calls |
+| **Round-trip time** | 30-60s typical | 60-90s typical |
+| **Customer effort** | Low | Medium |
+
+You can use both on the same project — they share gateway connections, API keys, and webhook endpoints.
+
+## How it works
+
+<Steps>
+  <Step title="Your server creates a session">
+    One `POST /v1/widget-sessions` call with your API key, the amount, and the gateway. You get back a `session_id`.
+  </Step>
+  <Step title="Your frontend mounts the widget">
+    Include `widget.js` once, then `Maven.createPayment({ sessionId }).mount("#slot")` — the iframe appears inline in your chat UI.
+  </Step>
+  <Step title="Customer enters card details">
+    The iframe is served from Maven's domain. Card data goes directly from browser to Maven to VGS to the gateway.
+  </Step>
+  <Step title="Your callbacks fire">
+    `onSuccess({ transaction_id, card_brand, card_last4, ... })` or `onFailure({ error_code, error_message })`.
+  </Step>
+  <Step title="Webhook confirms (optional)">
+    Same webhook format as voice — your server gets an authoritative notification even if the customer closes the tab.
+  </Step>
+</Steps>
+
+## Architecture
+
+```
+┌────────────────────────────────────────────────────┐
+│  Merchant's page (chatbot)                          │
+│  ┌──────────────────────────────────────────────┐  │
+│  │  <iframe src="api.trymaven.com/widget/..."> │  │  ← PCI scope lives here
+│  │    [Secure Payment]                          │  │     (Maven's domain)
+│  │    Card Number: ____________                 │  │
+│  │    Expiry: __/__   CVV: ___                  │  │
+│  │    [Confirm and Pay]                         │  │
+│  │  </iframe>                                   │  │
+│  └──────────────────────────────────────────────┘  │
+│  ↑ Merchant's page only gets onSuccess/onFailure   │
+│    callbacks via postMessage. Never sees card data.│
+└────────────────────────────────────────────────────┘
+               ↓
+  Maven backend → VGS vault → payment gateway
+```
+
+The card data path: **browser → Maven iframe → Maven backend → VGS tokenize → gateway charge**. The merchant's page and server never touch raw card data.
+
+## PCI compliance
+
+| | Scope | Why |
+|---|---|---|
+| **Merchant (you)** | SAQ-A | Card form lives in an iframe on Maven's domain; your page can't script against it |
+| **Maven** | SAQ-D | Same scope as voice; VGS handles tokenization |
+
+This is the same model as Stripe Elements, Braintree Drop-in, and Square Web Payments SDK.
+
+## Ready to integrate?
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/widget/quickstart">
+    10-minute integration guide.
+  </Card>
+  <Card title="SDK Reference" icon="code" href="/widget/sdk">
+    Complete `Maven.createPayment()` API.
+  </Card>
+  <Card title="Customization" icon="palette" href="/widget/customization">
+    Theme, labels, fields, sizing.
+  </Card>
+  <Card title="Webhooks" icon="bell" href="/integrations/webhooks">
+    Handle payment results server-side.
+  </Card>
+</CardGroup>

@@ -58,13 +58,22 @@
               "quickstart",
               "authentication",
               "integrations/webhooks",
-              "testing",
-              "voice-settings"
+              "testing"
             ]
           },
           {
-            "group": "Voice AI Platforms",
+            "group": "Chat Payments",
             "pages": [
+              "widget/overview",
+              "widget/quickstart",
+              "widget/sdk",
+              "widget/customization"
+            ]
+          },
+          {
+            "group": "Voice Payments",
+            "pages": [
+              "voice-settings",
               "integrations/vapi",
               "integrations/retell"
             ]
@@ -98,13 +107,22 @@
             ]
           },
           {
-            "group": "Sessions",
+            "group": "Voice Sessions",
             "openapi": "openapi.json",
             "pages": [
               "POST /v1/sessions",
               "GET /v1/sessions",
               "GET /v1/sessions/{session_id}",
               "POST /v1/sessions/{session_id}/cancel"
+            ]
+          },
+          {
+            "group": "Widget Sessions",
+            "openapi": "openapi.json",
+            "pages": [
+              "POST /v1/widget-sessions",
+              "GET /v1/widget-sessions/{session_id}",
+              "POST /v1/widget-sessions/{session_id}/charge"
             ]
           },
           {

@@ -1,57 +1,88 @@
 ---
 title: Introduction
-description: Collect credit card payments securely over phone calls with Maven
+description: Collect credit card payments securely — over voice or inside your chatbot — with Maven
 ---
 
-Maven is voice payment infrastructure. Collect credit card payments securely over phone calls using PCI-compliant tokenization and your preferred payment gateway.
+Maven is PCI-compliant payment infrastructure for AI applications. Collect credit card payments securely over voice calls **or** inside a chatbot, using gateway-agnostic tokenization.
 
 <CardGroup cols={3}>
   <Card title="Voice Payments" icon="phone">
     Collect card details via natural speech over phone calls.
   </Card>
-  <Card title="PCI Compliant" icon="shield-check">
-    Card data tokenized in-memory through VGS. Never touches your servers.
+  <Card title="Chat Payments" icon="message-square">
+    Embed a PCI-compliant card form inside your chatbot or web app.
   </Card>
-  <Card title="Multiple Gateways" icon="credit-card">
-    Process payments through Stripe, Authorize.net, or Braintree.
+  <Card title="Any Gateway" icon="credit-card">
+    Stripe, Authorize.net, Braintree, or Shift4 — same API.
   </Card>
 </CardGroup>
 
-## How It Works
+## Two ways to collect
 
-<Steps>
-  <Step title="Create a session">
-    Your server calls the Maven API with the customer's phone number, amount, and payment mode.
-  </Step>
-  <Step title="Transfer the caller">
-    Your voice AI agent transfers the caller to Maven's secure payment line.
-  </Step>
-  <Step title="Card details collected">
-    Maven's voice agent guides the caller through reading their card number, expiry, and CVV.
-  </Step>
-  <Step title="Payment processed">
-    Card details are tokenized through VGS and the payment is processed through your gateway.
-  </Step>
-  <Step title="Get the result">
-    Receive a webhook with the payment status, card last 4, and gateway-specific details. Or poll the session.
-  </Step>
-</Steps>
+<Tabs>
+  <Tab title="Voice">
+    <Steps>
+      <Step title="Create a session">
+        Your server calls the Maven API with the customer's phone number, amount, and payment mode.
+      </Step>
+      <Step title="Transfer the caller">
+        Your voice AI agent transfers the caller to Maven's secure payment line.
+      </Step>
+      <Step title="Card details collected">
+        Maven's voice agent guides the caller through reading their card number, expiry, and CVV.
+      </Step>
+      <Step title="Payment processed">
+        Card details are tokenized through VGS and the payment is processed through your gateway.
+      </Step>
+      <Step title="Get the result">
+        Receive a webhook with the payment status and gateway details.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Chat / Web">
+    <Steps>
+      <Step title="Create a session">
+        Your server calls `POST /v1/widget-sessions` with the amount and gateway.
+      </Step>
+      <Step title="Mount the widget">
+        `Maven.createPayment({ sessionId }).mount("#slot")` — the card form appears inline.
+      </Step>
+      <Step title="Customer pays">
+        Card data goes browser → Maven iframe → VGS → gateway. Your page never touches it.
+      </Step>
+      <Step title="Callbacks fire">
+        `onSuccess({ transaction_id, card_brand, card_last4 })` on your page, plus a webhook to your server.
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
 
 ## Supported Gateways
 
-| Gateway | Charge | Tokenize |
-|---------|--------|----------|
-| **Stripe** | Yes | Yes |
-| **Authorize.net** | Yes | Yes |
-| **Braintree** | Yes | Yes |
+| Gateway | Charge | Tokenize | Voice | Chat |
+|---------|--------|----------|-------|------|
+| **Stripe** | ✓ | ✓ | ✓ | ✓ |
+| **Authorize.net** | ✓ | ✓ | ✓ | ✓ |
+| **Braintree** | ✓ | ✓ | ✓ | ✓ |
+| **Shift4** | ✓ | ✓ | ✓ | ✓ |
+
+## PCI Compliance
+
+Your server never touches card data in either flow. Maven handles SAQ-D; you stay SAQ-A. See [Chat Widget Overview](/widget/overview) or [Voice Overview](/quickstart) for the full data-flow diagram.
 
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Quickstart" icon="rocket" href="/quickstart">
-    Set up your dashboard and collect your first payment.
+  <Card title="Voice Quickstart" icon="phone" href="/quickstart">
+    Collect your first voice payment.
   </Card>
-<Card title="API Reference" icon="code" href="/api-reference/overview">
-    Explore the full API with interactive examples.
+  <Card title="Chat Widget Quickstart" icon="message-square" href="/widget/quickstart">
+    Embed the widget in your chatbot.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/overview">
+    Full endpoint docs with an interactive playground.
+  </Card>
+  <Card title="Webhooks" icon="bell" href="/integrations/webhooks">
+    Server-side payment notifications.
   </Card>
 </CardGroup>

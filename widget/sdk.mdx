@@ -1,0 +1,152 @@
+---
+title: JavaScript SDK Reference
+description: Complete API for Maven.createPayment() — options, callbacks, and controller methods
+---
+
+The Maven JS SDK is a thin wrapper that mounts the secure iframe into your page and forwards lifecycle events to callbacks. It does **not** ship business logic — all the heavy lifting (tokenization, gateway charging) happens server-side.
+
+## Installation
+
+```html
+<script src="https://js.trymaven.com/v1/widget.js"></script>
+```
+
+After load, the global `Maven` object is available.
+
+<Tip>
+  The SDK is served with `Cache-Control: public, max-age=31536000, immutable` — the versioned URL (`/v1/widget.js`) never changes, so browsers cache it for a year. Bump the major version only for breaking changes.
+</Tip>
+
+## `Maven.createPayment(options)`
+
+Creates a widget controller. Does not mount until you call `.mount(target)`.
+
+### Options
+
+| Option | Type | Required | Description |
+|---|---|---|---|
+| `sessionId` | string | ✓ | Session ID returned by `POST /v1/widget-sessions` |
+| `baseUrl` | string |  | Overrides Maven API base (defaults to wherever `widget.js` is loaded from). Only needed for multi-region or staging. |
+| `theme` | object |  | Per-session theme override (see [Customization](/widget/customization)) |
+| `labels` | object |  | Per-session label override |
+| `fields` | object |  | Per-session field visibility override |
+| `onReady` | `() => void` |  | Fires when the iframe is fully loaded and the form is interactive. |
+| `onSuccess` | `(result) => void` |  | Fires when payment succeeds. See result shape below. |
+| `onFailure` | `(error) => void` |  | Fires when payment fails. See error shape below. |
+
+### Returns
+
+A controller object:
+
+```typescript
+interface PaymentController {
+  mount(target: string | HTMLElement): PaymentController;
+  updateTheme(theme: Theme): PaymentController;
+  updateLabels(labels: Labels): PaymentController;
+  updateFields(fields: Fields): PaymentController;
+  destroy(): void;
+  iframe: HTMLIFrameElement;
+}
+```
+
+## `controller.mount(target)`
+
+Inserts the iframe into the DOM.
+
+```javascript
+controller.mount("#chat-payment-slot");       // CSS selector
+controller.mount(document.getElementById("slot"));  // element directly
+```
+
+The iframe fills 100% of the target's width and auto-grows its height via `maven:resize` postMessage — your container controls the width, Maven handles the height.
+
+## `onSuccess(result)`
+
+Fires when the gateway charge succeeds.
+
+```javascript
+onSuccess: (result) => {
+  result.transaction_id  // gateway transaction ID
+  result.card_brand      // "visa", "mastercard", "amex", "discover"
+  result.card_last4      // "4242"
+  result.amount_cents    // 10000
+  result.currency        // "USD"
+  result.status          // "succeeded"
+}
+```
+
+## `onFailure(error)`
+
+Fires when the charge is declined or errors.
+
+```javascript
+onFailure: (error) => {
+  error.error_code     // "card_declined", "insufficient_funds", etc.
+  error.error_message  // Human-readable message to show the customer
+}
+```
+
+The widget itself shows the failure state (red "Payment Failed" box + "Try Again" button). Your `onFailure` callback is for doing things in *your* UI — sending a follow-up chat message, tracking the failure in analytics, etc.
+
+## Live updates
+
+You can update theme/labels/fields after mount — useful if your app has a dark-mode toggle and you want the widget to follow:
+
+```javascript
+const payment = Maven.createPayment({ sessionId }).mount("#slot");
+
+// Later:
+payment.updateTheme({ mode: "dark" });
+payment.updateLabels({ pay_button: "Pay $49.99" });
+payment.updateFields({ billing_zip: false });
+```
+
+## Cleanup
+
+When the chat bubble unmounts (user navigates away, chat closes, etc.), destroy the widget to remove listeners:
+
+```javascript
+payment.destroy();
+```
+
+## Full example
+
+```javascript
+const payment = Maven.createPayment({
+  sessionId: sessionIdFromServer,
+  theme: { mode: "dark", primary: "#6366F1" },
+  onReady: () => {
+    console.log("widget loaded");
+  },
+  onSuccess: (result) => {
+    chatbot.sendBotMessage(
+      `Payment received — ${result.card_brand.toUpperCase()} ending ${result.card_last4}.`
+    );
+    orderService.markPaid(orderId, result.transaction_id);
+  },
+  onFailure: (error) => {
+    chatbot.sendBotMessage(
+      `Payment didn't go through: ${error.error_message}. Want to try another card?`
+    );
+  },
+});
+
+payment.mount("#chat-payment-slot");
+```
+
+## Security model
+
+- The iframe is served from **Maven's domain**, not yours — your page's JavaScript cannot read the card inputs or inspect the form (enforced by the browser's same-origin policy).
+- Communication between your page and the iframe is **one-way via `postMessage`** — the iframe posts events up, the SDK listens. No DOM access.
+- The `sessionId` is a **single-use credential**. It expires after a short TTL (default 5 minutes) and can only be used to charge the specific amount on the specific project it was created for.
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Customization" icon="palette" href="/widget/customization">
+    Theme, labels, fields, sizing.
+  </Card>
+  <Card title="Webhooks" icon="bell" href="/integrations/webhooks">
+    Server-side confirmation events.
+  </Card>
+</CardGroup>

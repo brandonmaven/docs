@@ -1,0 +1,180 @@
+---
+title: Widget Quickstart
+description: Embed Maven in your chatbot and collect your first payment in 10 minutes
+---
+
+<Steps>
+  <Step title="Set up your project">
+    If you haven't already: [create an account](https://app.trymaven.com), create an app, [connect a gateway](/quickstart), and grab a test API key (`mvn_test_*`). Same setup as voice — gateway connections and API keys are shared.
+  </Step>
+
+  <Step title="Customize the widget (optional)">
+    Open your app → **Chat Payments** tab in the dashboard. Set your colors, labels, and which fields to show (cardholder name, billing ZIP). Hit **Save**.
+
+    These settings apply automatically to every session from this project. You can still override per-session via the API, but most merchants just set it once.
+  </Step>
+
+  <Step title="Server — create a session">
+    When your chatbot is ready to collect payment, your backend calls:
+
+    <CodeGroup>
+    ```bash cURL
+    curl https://api.trymaven.com/v1/widget-sessions \
+      -H "Authorization: Bearer $MAVEN_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "project": "my-app",
+        "gateway": "stripe",
+        "amount_cents": 10000,
+        "currency": "USD",
+        "description": "Order #1234"
+      }'
+    ```
+
+    ```javascript Node.js
+    const res = await fetch("https://api.trymaven.com/v1/widget-sessions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.MAVEN_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        project: "my-app",
+        gateway: "stripe",
+        amount_cents: 10000,
+        currency: "USD",
+        description: "Order #1234",
+      }),
+    });
+    const { session_id } = await res.json();
+    ```
+
+    ```python Python
+    import os, requests
+
+    r = requests.post(
+        "https://api.trymaven.com/v1/widget-sessions",
+        headers={"Authorization": f"Bearer {os.environ['MAVEN_API_KEY']}"},
+        json={
+            "project": "my-app",
+            "gateway": "stripe",
+            "amount_cents": 10000,
+            "currency": "USD",
+            "description": "Order #1234",
+        },
+    )
+    session_id = r.json()["session_id"]
+    ```
+    </CodeGroup>
+
+    Response:
+    ```json
+    {
+      "session_id": "8a7f3d2b-...",
+      "widget_url": "https://api.trymaven.com/widget/8a7f3d2b-...",
+      "expires_at": "2026-04-14T19:15:00Z"
+    }
+    ```
+
+    Hand the `session_id` to your frontend — via WebSocket message, HTTP response, whatever your chatbot uses.
+  </Step>
+
+  <Step title="Frontend — load the SDK once">
+    Add this once to your page, ideally before your chatbot renders:
+
+    ```html
+    <script src="https://js.trymaven.com/v1/widget.js"></script>
+    ```
+
+    This exposes a global `Maven` object with one method: `createPayment()`.
+  </Step>
+
+  <Step title="Frontend — mount the widget when ready">
+    When your chatbot receives the `session_id`, mount the widget into a `<div>` inside the chat message:
+
+    ```javascript
+    const payment = Maven.createPayment({
+      sessionId: "<SESSION_FROM_YOUR_SERVER>",
+      onSuccess: (result) => {
+        // Payment succeeded — result = { transaction_id, card_brand, card_last4, ... }
+        // Send your next chat message, update your DB, etc.
+      },
+      onFailure: (error) => {
+        // Payment failed — error = { error_code, error_message }
+      },
+    });
+
+    payment.mount("#chat-payment-slot");
+    ```
+
+    The iframe appears inline. Customer types their card, hits pay. Your callbacks fire.
+  </Step>
+
+  <Step title="Handle webhook (recommended)">
+    Configure a webhook URL on the project. Maven fires the same `payment-success` / `payment-failed` event for widget payments as it does for voice — with an additional `source: "chat"` field.
+
+    See [Webhooks](/integrations/webhooks) for the full payload.
+  </Step>
+</Steps>
+
+## Test cards
+
+Use these with your `mvn_test_*` key against a gateway in sandbox mode:
+
+| Outcome | Number | CVV | Expiry |
+|---|---|---|---|
+| Success | `4242 4242 4242 4242` | Any 3 digits | Any future date |
+| Declined | `4000 0000 0000 0002` | Any 3 digits | Any future date |
+| Amex | `3782 822463 10005` | Any 4 digits | Any future date |
+
+## Full example — vanilla JS chatbot
+
+```html
+<!doctype html>
+<html>
+<body>
+  <div id="chat">
+    <!-- messages appended here -->
+  </div>
+
+  <script src="https://js.trymaven.com/v1/widget.js"></script>
+  <script>
+    async function collectPayment(amount) {
+      // 1. Ask your server to create the session
+      const { sessionId } = await fetch("/api/create-payment-session", {
+        method: "POST",
+        body: JSON.stringify({ amount }),
+      }).then(r => r.json());
+
+      // 2. Add a chat bubble that will host the widget
+      const bubble = document.createElement("div");
+      bubble.className = "chat-message bot";
+      bubble.innerHTML = `<div class="slot"></div>`;
+      document.getElementById("chat").appendChild(bubble);
+
+      // 3. Mount the widget into that bubble
+      Maven.createPayment({
+        sessionId,
+        onSuccess: (result) => {
+          addBotMessage(`Paid — ${result.card_brand} •• ${result.card_last4}`);
+        },
+        onFailure: (error) => {
+          addBotMessage(`Payment failed: ${error.error_message}`);
+        },
+      }).mount(bubble.querySelector(".slot"));
+    }
+  </script>
+</body>
+</html>
+```
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="SDK Reference" icon="code" href="/widget/sdk">
+    Complete options, callbacks, and controller methods.
+  </Card>
+  <Card title="Customization" icon="palette" href="/widget/customization">
+    Theme, labels, fields, and sizing options.
+  </Card>
+</CardGroup>

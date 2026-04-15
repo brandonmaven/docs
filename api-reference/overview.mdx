@@ -25,16 +25,26 @@ See [Authentication](/authentication) for details on key formats and test vs liv
 
 ## Endpoints
 
-### Sessions
+### Voice Sessions
 
-The primary endpoints for creating and managing payment sessions:
+Endpoints for payments collected over phone calls:
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/v1/sessions` | Create a new payment session |
+| `POST` | `/v1/sessions` | Create a new voice payment session |
 | `GET` | `/v1/sessions` | Get session by caller phone |
 | `GET` | `/v1/sessions/{session_id}` | Get session by ID |
 | `POST` | `/v1/sessions/{session_id}/cancel` | Cancel a session |
+
+### Widget Sessions (Chat / Web)
+
+Endpoints for payments collected via the embeddable widget. See the [Chat Widget quickstart](/widget/quickstart) for the full integration flow.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/v1/widget-sessions` | Create a new chat/web payment session |
+| `GET` | `/v1/widget-sessions/{session_id}` | Session details for the iframe (session_id is the credential) |
+| `POST` | `/v1/widget-sessions/{session_id}/charge` | Submit card data — called internally by the iframe, not by merchants |
 
 ### Auth
 
