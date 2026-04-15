@@ -1,245 +1,61 @@
 ---
 title: Customization
-description: Theme, labels, fields, and sizing — match the widget to your brand and chat UI
+description: Match the widget to your brand from the dashboard
 ---
 
-The widget renders the same way for every session unless you customize it. You can save defaults **per-project** in your dashboard and/or override **per-session** in the API call.
+Brand the widget to match your chat UI — colors, text, fields, sizing — all from the dashboard. No code.
 
-## Where customization lives
+## Customize in the dashboard
 
-<CardGroup cols={2}>
-  <Card title="Project defaults (recommended)" icon="palette">
-    Set once in **Dashboard → your app → Chat Payments tab → Customize**. Applies to every session automatically.
-  </Card>
-  <Card title="Per-session overrides" icon="settings-2">
-    Pass `theme`, `labels`, or `fields` in the `POST /v1/widget-sessions` body to override project defaults for one session.
-  </Card>
-</CardGroup>
+<Steps>
+  <Step title="Open your app in the dashboard">
+    Go to [app.trymaven.com](https://app.trymaven.com) → your app → **Chat Payments** tab → **Customize**.
+  </Step>
+  <Step title="Tweak the look">
+    - **Theme:** mode (light/dark), button color, text color, border radius
+    - **Sizing:** card width, padding, font size
+    - **Labels:** header, pay button, deposit line, success/failure text
+    - **Fields:** toggle cardholder name and billing ZIP
+  </Step>
+  <Step title="See the live preview">
+    The preview iframe on the right updates as you change things.
+  </Step>
+  <Step title="Save">
+    Every widget session on this project automatically uses your saved settings. No code to change.
+  </Step>
+</Steps>
 
-**Merge order:** per-session body > project defaults > built-in defaults.
+## What you can customize
 
-## Theme
+<AccordionGroup>
+  <Accordion title="Colors & theme">
+    Light or dark mode, button color, text color, background, borders, border radius.
+  </Accordion>
+  <Accordion title="Sizing & spacing">
+    Card max-width (narrow / default / wide / full), internal padding, font size. The outer iframe width is controlled by your chatbot's CSS — the inner card sizing is controlled here.
+  </Accordion>
+  <Accordion title="Labels">
+    Header title, pay button text, processing text, deposit line, success/failure titles.
+  </Accordion>
+  <Accordion title="Fields">
+    Show or hide the cardholder name and billing ZIP fields. Card number, expiry, and CVV are always shown.
+  </Accordion>
+</AccordionGroup>
 
-Controls colors, typography, and inner card sizing.
+## Per-session overrides (advanced)
 
-```json
-{
-  "theme": {
-    "mode": "light",
-    "primary": "#6366F1",
-    "primary_text": "#ffffff",
-    "background": "#ffffff",
-    "text": "#111214",
-    "muted": "#6b6f76",
-    "border": "#e6e6ea",
-    "radius": "8px",
-    "card_max_width": "420px",
-    "card_padding": "20px",
-    "font_size": "14px",
-    "font_family": "\"Inter\", -apple-system, sans-serif",
-    "font_url": "https://fonts.googleapis.com/css2?family=Inter"
-  }
-}
-```
-
-| Field | Example | Description |
-|---|---|---|
-| `mode` | `"light"` \| `"dark"` | Flips the default palette. Merchant overrides still win. |
-| `primary` | `"#6366F1"` | Pay button background color. |
-| `primary_text` | `"#ffffff"` | Pay button text color. |
-| `background` | `"#ffffff"` | Card background. |
-| `text` | `"#111214"` | Primary text color. |
-| `muted` | `"#6b6f76"` | Secondary text (deposit line, labels). |
-| `border` | `"#e6e6ea"` | Card + input border color. |
-| `radius` | `"4px"` · `"8px"` · `"14px"` · `"20px"` | Input + button border radius. |
-| `card_max_width` | `"320px"`–`"560px"` \| `"100%"` | Max width of the card. Container controls outer width. |
-| `card_padding` | `"14px"` · `"20px"` · `"28px"` | Internal card padding. |
-| `font_size` | `"13px"`–`"16px"` | Base font size. |
-| `font_family` | CSS font stack | Override the default font. |
-| `font_url` | Stylesheet URL | Optional — load a web font (e.g. Google Fonts) before applying. |
-
-### Dark mode
-
-Setting `mode: "dark"` flips the full palette to dark-theme-appropriate values:
-- Dark background, light text
-- Field backgrounds darken
-- Error/success boxes shift to translucent color washes
-
-You can still override individual colors — they take precedence over the dark defaults.
-
-## Labels
-
-Customize visible text.
+If you run a platform that serves multiple downstream brands, you can override theme/labels/fields per session in the `POST /v1/widget-sessions` body:
 
 ```json
 {
-  "labels": {
-    "pay_button": "Confirm and Pay",
-    "processing": "Processing",
-    "merchant_name": "Secure Payment",
-    "deposit": "You will be charged $100 today as a deposit.",
-    "success_title": "Payment confirmed",
-    "success_detail": "Your card was charged successfully.",
-    "failure_title": "Payment Failed"
-  }
+  "project": "my-app",
+  "gateway": "stripe",
+  "amount_cents": 10000,
+  "theme":  { "primary": "#635BFF" },
+  "labels": { "pay_button": "Pay Now" }
 }
 ```
 
-| Field | Default | Where it shows |
-|---|---|---|
-| `merchant_name` | `"Secure Payment"` | Header title next to the lock icon |
-| `pay_button` | `"Confirm and Pay"` | The green submit button |
-| `processing` | `"Processing"` | Button label while charging |
-| `deposit` | Auto-generated from amount | Small text above the button |
-| `success_title` | `"Payment confirmed"` | Green checkmark screen title |
-| `success_detail` | `"Your card was charged successfully."` | Green checkmark body text |
-| `failure_title` | `"Payment Failed"` | Red error box title |
+Any field you don't pass falls back to the project's saved defaults.
 
-## Fields
-
-Show/hide optional fields.
-
-```json
-{
-  "fields": {
-    "cardholder_name": true,
-    "billing_zip": true
-  }
-}
-```
-
-| Field | Default | Notes |
-|---|---|---|
-| `cardholder_name` | `true` | When shown, the name is sent to the gateway (Braintree/Authnet `firstName/lastName`, Stripe `billing_details.name`, Shift4 `cardholderName`). |
-| `billing_zip` | `true` | Sent to the gateway for AVS (address verification). Some issuers require it. |
-
-Card number, expiry, and CVV are always shown and required.
-
-## Sizing for chatbots
-
-The iframe fills 100% of its container — **width is controlled by your chatbot's CSS**, not by Maven. Inside the iframe, the card is centered and has a `max-width` (default 420px) you can control via `theme.card_max_width`.
-
-### Common layouts
-
-<Tabs>
-  <Tab title="Narrow chat (iMessage-style)">
-    Merchant CSS:
-    ```css
-    #chat-payment-slot { max-width: 380px; margin: 8px 0; }
-    ```
-    Theme:
-    ```json
-    { "card_max_width": "380px", "card_padding": "14px", "font_size": "13px" }
-    ```
-  </Tab>
-  <Tab title="Standard chat bubble">
-    Merchant CSS:
-    ```css
-    #chat-payment-slot { max-width: 440px; }
-    ```
-    Theme:
-    ```json
-    { "card_max_width": "420px", "card_padding": "20px", "font_size": "14px" }
-    ```
-  </Tab>
-  <Tab title="Wide chat panel">
-    Merchant CSS:
-    ```css
-    #chat-payment-slot { max-width: 600px; }
-    ```
-    Theme:
-    ```json
-    { "card_max_width": "560px", "card_padding": "28px", "font_size": "15px" }
-    ```
-  </Tab>
-  <Tab title="Full-width mobile drawer">
-    Merchant CSS:
-    ```css
-    #chat-payment-slot { width: 100%; }
-    ```
-    Theme:
-    ```json
-    { "card_max_width": "100%", "card_padding": "20px" }
-    ```
-  </Tab>
-</Tabs>
-
-The iframe height auto-adjusts as content changes (e.g. when a failure message appears) via the `maven:resize` postMessage protocol — you don't have to manage it.
-
-## Branded examples
-
-<Tabs>
-  <Tab title="Fintech (Stripe-like)">
-    ```json
-    {
-      "theme": {
-        "mode": "light",
-        "primary": "#635BFF",
-        "primary_text": "#ffffff",
-        "radius": "8px",
-        "font_family": "\"Inter\", sans-serif"
-      },
-      "labels": {
-        "pay_button": "Pay",
-        "merchant_name": "Secure Payment"
-      }
-    }
-    ```
-  </Tab>
-  <Tab title="Hospitality (warm)">
-    ```json
-    {
-      "theme": {
-        "mode": "light",
-        "primary": "#a88e6c",
-        "primary_text": "#ffffff",
-        "radius": "20px",
-        "card_padding": "28px"
-      },
-      "labels": {
-        "pay_button": "Confirm Reservation",
-        "merchant_name": "Palace Signature Room",
-        "success_title": "Reservation confirmed",
-        "success_detail": "Your booking is locked in."
-      }
-    }
-    ```
-  </Tab>
-  <Tab title="Enterprise dark">
-    ```json
-    {
-      "theme": {
-        "mode": "dark",
-        "primary": "#3b82f6",
-        "primary_text": "#ffffff",
-        "radius": "4px"
-      },
-      "labels": {
-        "pay_button": "Submit Payment"
-      }
-    }
-    ```
-  </Tab>
-</Tabs>
-
-## Live updates
-
-After mounting, you can update theme/labels/fields at runtime — useful if your app has a light/dark toggle or the amount changes:
-
-```javascript
-const payment = Maven.createPayment({ sessionId }).mount("#slot");
-
-// Later:
-payment.updateTheme({ mode: "dark" });
-payment.updateLabels({ pay_button: "Pay $49.99 now" });
-payment.updateFields({ billing_zip: false });
-```
-
-## What you can't customize
-
-Intentionally locked down:
-- **Field heights, input spacing, field order** — brand-consistent across Maven so the form always feels usable
-- **Minimum card size** — the form needs a floor to avoid overlap
-- **Custom CSS injection** — disabled for security (opens XSS into the PCI iframe)
-
-If a styling knob you want isn't on this page, let us know at [support@trymaven.com](mailto:support@trymaven.com).
+For most merchants, the dashboard is all you need.

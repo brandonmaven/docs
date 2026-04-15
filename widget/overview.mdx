@@ -1,16 +1,16 @@
 ---
 title: Chat Payment Widget
-description: Collect payments inline in your chatbot or web app — PCI-compliant in 10 lines of code
+description: Collect payments inline in your chatbot or web app in 10 lines of code
 ---
 
-The Maven chat payment widget lets your chatbot or web app collect card payments without redirecting the customer, sending them to Stripe Checkout, or handling card data yourself. Drop in a `<script>` tag and a `Maven.createPayment()` call, and the customer enters their card into a secure iframe rendered on Maven's domain.
+The Maven chat payment widget lets your chatbot or web app collect card payments without redirecting the customer, sending them to Stripe Checkout, or handling card data yourself. Drop in a `<script>` tag and a `Maven.createPayment()` call, and the customer enters their card into a secure iframe we host.
 
 <CardGroup cols={3}>
   <Card title="Inline in chat" icon="message-square">
     Renders as a message in your chatbot UI. No redirects.
   </Card>
-  <Card title="PCI Compliant" icon="shield-check">
-    Card data never touches your servers. Merchant stays SAQ-A.
+  <Card title="Secure by default" icon="shield-check">
+    Card data never touches your servers — we handle tokenization and charging.
   </Card>
   <Card title="Any gateway" icon="credit-card">
     Stripe, Authorize.net, Braintree, or Shift4 — same code.
@@ -52,32 +52,23 @@ You can use both on the same project — they share gateway connections, API key
 
 ```
 ┌────────────────────────────────────────────────────┐
-│  Merchant's page (chatbot)                          │
+│  Your page (chatbot)                                │
 │  ┌──────────────────────────────────────────────┐  │
-│  │  <iframe src="api.trymaven.com/widget/..."> │  │  ← PCI scope lives here
-│  │    [Secure Payment]                          │  │     (Maven's domain)
+│  │  <iframe src="api.trymaven.com/widget/..."> │  │  ← Maven hosts this
+│  │    Secure Payment                            │  │
 │  │    Card Number: ____________                 │  │
 │  │    Expiry: __/__   CVV: ___                  │  │
 │  │    [Confirm and Pay]                         │  │
 │  │  </iframe>                                   │  │
 │  └──────────────────────────────────────────────┘  │
-│  ↑ Merchant's page only gets onSuccess/onFailure   │
-│    callbacks via postMessage. Never sees card data.│
+│  ↑ Your page only gets onSuccess/onFailure         │
+│    callbacks. Never sees card data.                │
 └────────────────────────────────────────────────────┘
                ↓
-  Maven backend → VGS vault → payment gateway
+        Maven → payment gateway
 ```
 
-The card data path: **browser → Maven iframe → Maven backend → VGS tokenize → gateway charge**. The merchant's page and server never touch raw card data.
-
-## PCI compliance
-
-| | Scope | Why |
-|---|---|---|
-| **Merchant (you)** | SAQ-A | Card form lives in an iframe on Maven's domain; your page can't script against it |
-| **Maven** | SAQ-D | Same scope as voice; VGS handles tokenization |
-
-This is the same model as Stripe Elements, Braintree Drop-in, and Square Web Payments SDK.
+The card data path: **browser → Maven iframe → Maven backend → gateway**. Your page and server never touch raw card data.
 
 ## Ready to integrate?
 
