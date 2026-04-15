@@ -55,10 +55,8 @@
             "group": "Getting Started",
             "pages": [
               "introduction",
-              "quickstart",
               "authentication",
-              "integrations/webhooks",
-              "testing"
+              "integrations/webhooks"
             ]
           },
           {
@@ -73,7 +71,9 @@
           {
             "group": "Voice Payments",
             "pages": [
+              "quickstart",
               "voice-settings",
+              "testing",
               "integrations/vapi",
               "integrations/retell"
             ]
@@ -120,8 +120,7 @@
             "group": "Widget Sessions",
             "openapi": "openapi.json",
             "pages": [
-              "POST /v1/widget-sessions",
-              "GET /v1/widget-sessions/{session_id}"
+              "POST /v1/widget-sessions"
             ]
           },
           {
