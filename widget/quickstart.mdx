@@ -93,18 +93,24 @@ description: Embed Maven in your chatbot and collect your first payment in 10 mi
     const payment = Maven.createPayment({
       sessionId: "<SESSION_FROM_YOUR_SERVER>",
       onSuccess: (result) => {
-        // Payment succeeded — result = { transaction_id, card_brand, card_last4, ... }
-        // Send your next chat message, update your DB, etc.
+        // result = { transaction_id, card_brand, card_last4, amount_cents, currency, status }
+
+        // Typical things to do here (all optional — Maven already shows
+        // a green "Payment confirmed" screen inside the iframe):
+        chatbot.sendMessage(`Paid — ${result.card_brand} •• ${result.card_last4}`);
+        await db.orders.markPaid(orderId, result.transaction_id);
+        // or: window.location = `/thanks?txn=${result.transaction_id}`;
       },
       onFailure: (error) => {
-        // Payment failed — error = { error_code, error_message }
+        // error = { error_code, error_message }
+        chatbot.sendMessage(`Payment didn't go through: ${error.error_message}`);
       },
     });
 
     payment.mount("#chat-payment-slot");
     ```
 
-    The iframe appears inline. Customer types their card, hits pay. Your callbacks fire.
+    The iframe appears inline. Customer types their card, hits pay. Your callbacks fire — `onSuccess` and `onFailure` are **hooks into your app** so you can continue the chatbot conversation, update your database, or redirect the customer. The widget itself handles the card form, charging, and the success/failure UI inside the iframe.
   </Step>
 
   <Step title="Handle webhook (recommended)">
@@ -113,6 +119,20 @@ description: Embed Maven in your chatbot and collect your first payment in 10 mi
     See [Webhooks](/integrations/webhooks) for the full payload.
   </Step>
 </Steps>
+
+## Common errors
+
+`POST /v1/widget-sessions` can return these if something's off in your setup:
+
+| Status | Code | What it means | Fix |
+|---|---|---|---|
+| `401` | — | Bad or missing API key | Check the `Authorization: Bearer mvn_test_...` header |
+| `404` | `project_not_found` | Project slug doesn't exist in your org | Double-check the `project` value matches a slug in your dashboard |
+| `422` | `gateway_not_connected` | Gateway isn't connected for this env | Connect the gateway in the dashboard (Gateways tab). Test keys need test credentials; live keys need live credentials. |
+| `422` | `invalid_amount` | `amount_cents` is 0 or negative in charge mode | Pass `amount_cents > 0`, or use `mode: "tokenize"` to save a card without charging |
+| `429` | — | Rate limited | Back off; defaults are 20 session creates/minute per IP |
+
+If the widget mounts but doesn't render, check your browser console. The usual culprit is `Maven is not defined` — that means the `<script src="…">` tag didn't load. Hard-refresh and check the URL is reachable.
 
 ## Test cards
 

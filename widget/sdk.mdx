@@ -26,13 +26,14 @@ Creates a widget controller. Does not mount until you call `.mount(target)`.
 | Option | Type | Required | Description |
 |---|---|---|---|
 | `sessionId` | string | ✓ | Session ID returned by `POST /v1/widget-sessions` |
-| `baseUrl` | string |  | Overrides Maven API base (defaults to wherever `widget.js` is loaded from). Only needed for multi-region or staging. |
-| `theme` | object |  | Per-session theme override (see [Customization](/widget/customization)) |
-| `labels` | object |  | Per-session label override |
-| `fields` | object |  | Per-session field visibility override |
+| `baseUrl` | string |  | Overrides Maven API base (defaults to wherever `widget.js` is loaded from). Only needed for multi-region or pointing at staging. |
 | `onReady` | `() => void` |  | Fires when the iframe is fully loaded and the form is interactive. |
 | `onSuccess` | `(result) => void` |  | Fires when payment succeeds. See result shape below. |
 | `onFailure` | `(error) => void` |  | Fires when payment fails. See error shape below. |
+
+<Tip>
+  Theme, labels, and fields are set per-project in the dashboard — not on the SDK call. See [Customization](/widget/customization).
+</Tip>
 
 ### Returns
 
@@ -88,19 +89,6 @@ onFailure: (error) => {
 
 The widget itself shows the failure state (red "Payment Failed" box + "Try Again" button). Your `onFailure` callback is for doing things in *your* UI — sending a follow-up chat message, tracking the failure in analytics, etc.
 
-## Live updates
-
-You can update theme/labels/fields after mount — useful if your app has a dark-mode toggle and you want the widget to follow:
-
-```javascript
-const payment = Maven.createPayment({ sessionId }).mount("#slot");
-
-// Later:
-payment.updateTheme({ mode: "dark" });
-payment.updateLabels({ pay_button: "Pay $49.99" });
-payment.updateFields({ billing_zip: false });
-```
-
 ## Cleanup
 
 When the chat bubble unmounts (user navigates away, chat closes, etc.), destroy the widget to remove listeners:
@@ -114,7 +102,6 @@ payment.destroy();
 ```javascript
 const payment = Maven.createPayment({
   sessionId: sessionIdFromServer,
-  theme: { mode: "dark", primary: "#6366F1" },
   onReady: () => {
     console.log("widget loaded");
   },
