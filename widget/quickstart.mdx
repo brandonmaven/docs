@@ -80,7 +80,7 @@ description: Embed Maven in your chatbot and collect your first payment in 10 mi
     Add this once to your page, ideally before your chatbot renders:
 
     ```html
-    <script src="https://js.trymaven.com/v1/widget.js"></script>
+    <script src="https://api.trymaven.com/widget/v1/widget.js"></script>
     ```
 
     This exposes a global `Maven` object with one method: `createPayment()`.
@@ -154,7 +154,7 @@ Use these with your `mvn_test_*` key against a gateway in sandbox mode:
     <!-- messages appended here -->
   </div>
 
-  <script src="https://js.trymaven.com/v1/widget.js"></script>
+  <script src="https://api.trymaven.com/widget/v1/widget.js"></script>
   <script>
     async function collectPayment(amount) {
       // 1. Ask your server to create the session
