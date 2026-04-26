@@ -252,7 +252,6 @@ If your agent has trouble chaining the create and transfer steps, add explicit i
 | Session created but call doesn't connect | Caller ID mismatch | See [Caller ID Preservation](#caller-id-preservation) |
 | Agent creates session but doesn't transfer | LLM not chaining tool calls | Add explicit transfer instructions to agent prompt |
 | Transfer connects but "no session found" | Session expired (5 min TTL) | Create the session immediately before transferring, not at the start of the call |
-| ElevenLabs test button returns 401 | Hardcoded voice ID issue (fixed) | Update to latest Maven version |
 
 ## Next
 
