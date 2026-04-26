@@ -75,7 +75,8 @@
               "voice-settings",
               "testing",
               "integrations/vapi",
-              "integrations/retell"
+              "integrations/retell",
+              "integrations/custom-platform"
             ]
           },
           {

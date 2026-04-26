@@ -1,0 +1,272 @@
+---
+title: Custom Voice Platform
+description: Integrate Maven voice payments with any Twilio-based or SIP-capable voice agent platform
+---
+
+# Custom Voice Platform Integration
+
+Add PCI-compliant voice payments to any voice agent platform — Outbox AI, Bland, or any custom Twilio-based system. This guide covers the universal integration pattern that works with any platform capable of HTTP tool calls and call transfers.
+
+## How It Works
+
+<Steps>
+  <Step title="Agent triggers payment collection">
+    During a call, your voice agent calls the Maven API to create a payment session with the amount and caller's phone number.
+  </Step>
+  <Step title="Maven returns a transfer number">
+    Maven creates a session and returns a phone number (and SIP URI) to transfer the caller to.
+  </Step>
+  <Step title="Agent transfers the caller">
+    Your agent transfers the live call to Maven's secure payment line.
+
+    <Warning>
+    **The transfer must preserve the original caller's phone number.** Maven matches sessions by caller ID. If your platform replaces the caller ID with its own trunk number during transfer, the session will silently fail to connect. See [Caller ID Preservation](#caller-id-preservation) below.
+    </Warning>
+  </Step>
+  <Step title="Payment collected">
+    Maven collects the card details over voice, processes the payment, and sends a [webhook](/integrations/webhooks) with the result. The caller is optionally transferred back to your agent via the `callback` number.
+  </Step>
+</Steps>
+
+## Prerequisites
+
+1. A Maven account with an [API key](/authentication) (`mvn_test_` for test mode, `mvn_live_` for production)
+2. An app with a [payment gateway connected](/quickstart) (Stripe, Authorize.net, Braintree, or Shift4)
+3. A voice agent platform that supports HTTP tool calls and call transfers
+
+## Step 1 — Create a Payment Session
+
+When your agent decides to collect a payment, call the Maven API:
+
+```bash
+curl -X POST https://api.trymaven.com/v1/sessions \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project": "your-app-slug",
+    "caller": "+14155551234",
+    "amount": 150.00,
+    "gateway": "stripe",
+    "mode": "charge",
+    "description": "Invoice #1234",
+    "callback": "+18005550000"
+  }'
+```
+
+**Response (HTTP 201):**
+
+```json
+{
+  "session_id": "a1b2c3d4-...",
+  "status": "created",
+  "phone_number": "+18338..."  ,
+  "sip_uri": "sip:a1b2c3d4@sip.trymaven.com",
+  "created_at": "2026-04-26T12:00:00Z"
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `project` | Your app slug from the Maven Dashboard |
+| `caller` | The customer's phone number in E.164 format. **Must match the caller ID on the transferred call.** |
+| `amount` | Payment amount in dollars (e.g. `150.00`) |
+| `gateway` | `stripe`, `authorizenet`, `braintree`, or `shift4` |
+| `mode` | `charge` (process immediately) or `tokenize` (save card only) |
+| `description` | Optional — what the payment is for |
+| `callback` | Optional — phone number or SIP URI to transfer the caller back to after payment |
+
+### HTTP 201 Compatibility
+
+Some platforms (e.g. Outbox AI) only accept HTTP 200 as a success response. If your platform wraps non-200 responses as errors, add `?response_status=200` to force a 200 response:
+
+```
+POST https://api.trymaven.com/v1/sessions?response_status=200
+```
+
+The response body is identical — only the status code changes.
+
+## Step 2 — Transfer the Call
+
+After creating the session, transfer the caller to the `phone_number` (PSTN) or `sip_uri` (SIP) returned in the response. Use a **cold transfer** — Maven handles the entire payment conversation.
+
+### PSTN Transfer
+
+Transfer to the `phone_number` field. This works on any platform that supports standard call transfers.
+
+### SIP Transfer
+
+Transfer to the `sip_uri` field. SIP transfers are more reliable for caller ID preservation because you can pass identifying headers:
+
+- `X-Session-Id` — The session UUID (highest priority match, skips caller ID lookup entirely)
+- `X-Caller` — The original caller's phone number (useful if the platform can't preserve caller ID natively)
+
+<Tip>
+If your platform supports SIP headers, pass `X-Session-Id` on the transfer. This is the most reliable matching method — it doesn't depend on caller ID at all.
+</Tip>
+
+## Step 3 — Get the Result
+
+Maven sends a [webhook](/integrations/webhooks) to your app's webhook URL when the session completes. You can also poll the session status:
+
+```bash
+# By session ID
+curl https://api.trymaven.com/v1/sessions/SESSION_ID \
+  -H "Authorization: Bearer YOUR_API_KEY"
+
+# By caller phone number (returns most recent session)
+curl "https://api.trymaven.com/v1/sessions?caller=%2B14155551234" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Caller ID Preservation
+
+This is the most common integration pitfall. Maven matches inbound calls to pending sessions by the caller's phone number. If the caller ID doesn't match, the session won't connect.
+
+### How matching works
+
+When Maven receives a transferred call, it checks these fields in priority order:
+
+1. `X-Session-Id` SIP header (direct UUID match — **most reliable**)
+2. `X-Caller` SIP header (phone number override)
+3. SIP `To` URI (if it contains the session ID or phone number)
+4. `From` field (the caller ID on the inbound leg)
+
+### Common pitfalls
+
+| Platform behavior | Result | Fix |
+|-------------------|--------|-----|
+| Platform replaces caller ID with its own trunk number | Session doesn't match | Use SIP transfer with `X-Session-Id` header |
+| Platform uses agent's number as caller ID | Session doesn't match | Configure transfer to use **customer's number** as displayed caller ID |
+| Platform strips SIP headers | Falls back to `From` field matching | Ensure PSTN caller ID is preserved |
+
+### Diagnosing caller ID issues
+
+If sessions are created but calls don't connect, verify the session exists for the expected caller:
+
+```bash
+curl "https://api.trymaven.com/v1/sessions?caller=%2B14155551234" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+If this returns the session, the issue is that the transferred call's `From` doesn't match `+14155551234`. Check your platform's transfer settings.
+
+## Tool Configuration
+
+Most voice agent platforms let you define HTTP tools. Here's how to configure them:
+
+### collect_payment tool
+
+| Setting | Value |
+|---------|-------|
+| **Method** | `POST` |
+| **URL** | `https://api.trymaven.com/v1/sessions?response_status=200` |
+| **Headers** | `Authorization: Bearer YOUR_API_KEY`, `Content-Type: application/json` |
+
+**Parameters:**
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "amount": {
+      "type": "number",
+      "description": "Payment amount in dollars (e.g. 150.00)"
+    },
+    "caller": {
+      "type": "string",
+      "description": "Customer phone number in E.164 format (e.g. +14155551234)"
+    },
+    "description": {
+      "type": "string",
+      "description": "What the payment is for"
+    },
+    "callback": {
+      "type": "string",
+      "description": "Phone number to transfer the caller back to after payment"
+    }
+  },
+  "required": ["amount", "caller"]
+}
+```
+
+<Note>
+The `project`, `gateway`, and `mode` fields should be hardcoded in the URL or request body rather than exposed to the LLM. Use the URL format:
+```
+POST https://api.trymaven.com/v1/sessions?response_status=200
+```
+with a fixed body that includes `"project": "your-app-slug"`, `"gateway": "stripe"`, `"mode": "charge"`.
+</Note>
+
+### get_session tool
+
+| Setting | Value |
+|---------|-------|
+| **Method** | `GET` |
+| **URL** | `https://api.trymaven.com/v1/sessions?caller={phone_number}` |
+| **Headers** | `Authorization: Bearer YOUR_API_KEY` |
+
+Use this after the caller returns from the payment line to check the result.
+
+### cancel_session tool
+
+| Setting | Value |
+|---------|-------|
+| **Method** | `POST` |
+| **URL** | `https://api.trymaven.com/v1/sessions/{session_id}/cancel` |
+| **Headers** | `Authorization: Bearer YOUR_API_KEY` |
+
+## Example Agent Prompt
+
+Add something like this to your voice agent's system prompt:
+
+```
+When a caller needs to make a payment:
+
+1. Confirm the amount with the caller
+2. Call collect_payment with:
+   - amount: the payment amount
+   - caller: the customer's phone number
+   - description: a short description of the payment
+   - callback: your agent's phone number (so the caller returns after payment)
+3. Tell the caller: "I'm transferring you to our secure payment line now."
+4. IMMEDIATELY transfer the call to the phone_number returned by collect_payment.
+   Do NOT wait for the caller to confirm — transfer right away.
+
+After the caller returns from the payment line:
+1. Call get_session with the caller's phone number
+2. If status is "payment-success" — confirm the payment and thank them
+3. If status is "payment-failed" or "expired" — let them know and offer to try again
+
+Never ask for card details yourself — the secure payment line handles that.
+```
+
+<Tip>
+If your agent has trouble chaining the create and transfer steps, add explicit instructions like "You MUST call transfer immediately after collect_payment succeeds — do not wait or ask for confirmation."
+</Tip>
+
+## Troubleshooting
+
+| Problem | Cause | Solution |
+|---------|-------|----------|
+| Tool call returns error with `201` in the message | Platform doesn't accept HTTP 201 | Add `?response_status=200` to the URL |
+| Session created but call doesn't connect | Caller ID mismatch | See [Caller ID Preservation](#caller-id-preservation) |
+| Agent creates session but doesn't transfer | LLM not chaining tool calls | Add explicit transfer instructions to agent prompt |
+| Transfer connects but "no session found" | Session expired (5 min TTL) | Create the session immediately before transferring, not at the start of the call |
+| ElevenLabs test button returns 401 | Hardcoded voice ID issue (fixed) | Update to latest Maven version |
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Webhooks" icon="bell" href="/integrations/webhooks">
+    Get notified when sessions complete.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/overview">
+    Explore the full API.
+  </Card>
+  <Card title="Voice Settings" icon="microphone" href="/voice-settings">
+    Configure TTS voice and language.
+  </Card>
+  <Card title="Testing" icon="flask" href="/testing">
+    Test payments with test cards.
+  </Card>
+</CardGroup>
