@@ -74,6 +74,7 @@
               "quickstart",
               "voice-settings",
               "testing",
+              "integrations/twilio",
               "integrations/vapi",
               "integrations/retell",
               "integrations/custom-platform"

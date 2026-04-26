@@ -1,0 +1,237 @@
+---
+title: Twilio
+description: Integrate Maven voice payments into your Twilio-based voice application
+---
+
+# Twilio Integration
+
+Add PCI-compliant voice payments to a voice application you've built directly on Twilio. This guide is for developers who orchestrate their own call flow using TwiML or the Twilio REST API — if you're using a voice agent platform like VAPI, Retell, or Outbox, see the [platform-specific guides](/integrations/vapi) or [Custom Platform](/integrations/custom-platform) guide instead.
+
+## How It Works
+
+<Steps>
+  <Step title="Your app creates a payment session">
+    When your call flow needs to collect a payment, your server calls the Maven API with the amount and caller's phone number.
+  </Step>
+  <Step title="Your app transfers the caller">
+    Maven returns a phone number. Your server responds with TwiML that dials that number, preserving the original caller ID.
+  </Step>
+  <Step title="Maven collects the payment">
+    Maven handles the entire card collection conversation — card number, expiry, CVV, and ZIP code. Your app is never exposed to card data (PCI compliant).
+  </Step>
+  <Step title="Caller returns to your app">
+    After payment, Maven transfers the caller back to your `callback` number. You receive a [webhook](/integrations/webhooks) with the payment result.
+  </Step>
+</Steps>
+
+## Prerequisites
+
+1. A Maven account with an [API key](/authentication)
+2. An app with a [payment gateway connected](/quickstart)
+3. A Twilio account with a phone number
+
+## Step 1 — Create a Payment Session
+
+When your call flow reaches the payment step, create a session from your server:
+
+```python
+import httpx
+
+async def create_payment_session(caller: str, amount: float, callback: str):
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            "https://api.trymaven.com/v1/sessions",
+            headers={"Authorization": "Bearer YOUR_API_KEY"},
+            json={
+                "project": "your-app-slug",
+                "caller": caller,       # customer's phone number (E.164)
+                "amount": amount,
+                "gateway": "stripe",
+                "mode": "charge",
+                "callback": callback,    # your Twilio number to return the caller to
+            },
+        )
+        resp.raise_for_status()
+        return resp.json()
+```
+
+The response includes:
+
+```json
+{
+  "session_id": "a1b2c3d4-...",
+  "status": "created",
+  "phone_number": "+18338...",
+  "created_at": "2026-04-26T12:00:00Z"
+}
+```
+
+## Step 2 — Transfer with TwiML
+
+Respond to the Twilio webhook with a `<Dial>` that transfers the caller to Maven's payment line. The critical detail: **set `callerId` to the customer's phone number**, not your Twilio number.
+
+```python
+from twilio.twiml.voice_response import VoiceResponse
+
+def build_transfer_twiml(maven_phone: str, customer_phone: str, action_url: str):
+    response = VoiceResponse()
+    response.say("I'm transferring you to our secure payment line now.")
+    dial = response.dial(
+        caller_id=customer_phone,  # preserve the original caller ID
+        action=action_url,         # called when the dial completes
+        timeout=30,
+    )
+    dial.number(maven_phone)
+    return str(response)
+```
+
+This generates:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say>I'm transferring you to our secure payment line now.</Say>
+    <Dial callerId="+14155551234" action="https://your-server.com/payment-complete" timeout="30">
+        <Number>+18338...</Number>
+    </Dial>
+</Response>
+```
+
+<Warning>
+**`callerId` must be the customer's phone number.** Maven matches sessions by the caller ID on the inbound leg. If you use your Twilio number as the caller ID, the session won't connect.
+</Warning>
+
+## Step 3 — Handle the Result
+
+After the payment completes and the caller is transferred back, Twilio hits your `action` URL. You can look up the session result:
+
+```python
+async def handle_payment_complete(caller: str):
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(
+            "https://api.trymaven.com/v1/sessions",
+            headers={"Authorization": "Bearer YOUR_API_KEY"},
+            params={"caller": caller},
+        )
+        session = resp.json()
+
+    if session["status"] == "payment-success":
+        # payment went through
+        return build_twiml_say("Your payment was successful. Thank you!")
+    elif session["status"] == "payment-failed":
+        return build_twiml_say("The payment didn't go through. Would you like to try again?")
+    else:
+        return build_twiml_say("It looks like the payment session expired.")
+```
+
+You'll also receive a [webhook](/integrations/webhooks) with the full payment details (card brand, last 4, gateway transaction IDs).
+
+## Full Example
+
+Here's a minimal FastAPI app that handles the complete flow:
+
+```python
+from fastapi import FastAPI, Form, Request
+from fastapi.responses import Response
+from twilio.twiml.voice_response import VoiceResponse
+import httpx
+
+app = FastAPI()
+
+MAVEN_API_KEY = "mvn_test_..."
+MAVEN_PROJECT = "your-app-slug"
+YOUR_TWILIO_NUMBER = "+18005550000"
+API_BASE = "https://your-server.com"
+
+@app.post("/incoming-call")
+async def incoming_call(From: str = Form(...)):
+    """Twilio hits this when a call comes in."""
+    response = VoiceResponse()
+    response.say("Welcome! Let me collect your payment.")
+    response.redirect(f"{API_BASE}/start-payment?caller={From}")
+    return Response(content=str(response), media_type="text/xml")
+
+
+@app.post("/start-payment")
+async def start_payment(caller: str):
+    """Create a Maven session and transfer the caller."""
+
+    # 1. Create the payment session
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            "https://api.trymaven.com/v1/sessions",
+            headers={"Authorization": f"Bearer {MAVEN_API_KEY}"},
+            json={
+                "project": MAVEN_PROJECT,
+                "caller": caller,
+                "amount": 49.99,
+                "gateway": "stripe",
+                "mode": "charge",
+                "callback": YOUR_TWILIO_NUMBER,
+            },
+        )
+        resp.raise_for_status()
+        session = resp.json()
+
+    # 2. Transfer to Maven's payment line
+    response = VoiceResponse()
+    response.say("Transferring you to our secure payment line.")
+    dial = response.dial(
+        caller_id=caller,
+        action=f"{API_BASE}/payment-complete?caller={caller}",
+        timeout=30,
+    )
+    dial.number(session["phone_number"])
+    return Response(content=str(response), media_type="text/xml")
+
+
+@app.post("/payment-complete")
+async def payment_complete(caller: str):
+    """Called after the Maven call ends and the caller returns."""
+
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(
+            "https://api.trymaven.com/v1/sessions",
+            headers={"Authorization": f"Bearer {MAVEN_API_KEY}"},
+            params={"caller": caller},
+        )
+        session = resp.json()
+
+    response = VoiceResponse()
+    if session["status"] == "payment-success":
+        response.say("Your payment was successful. Thank you for calling!")
+    elif session["status"] in ("payment-failed", "expired"):
+        response.say("The payment didn't go through. Please call back to try again.")
+    else:
+        response.say("Thank you for calling. Goodbye.")
+    response.hangup()
+    return Response(content=str(response), media_type="text/xml")
+```
+
+## Caller ID Verification
+
+If sessions are created but calls aren't connecting, verify the session exists for the right number:
+
+```bash
+curl "https://api.trymaven.com/v1/sessions?caller=%2B14155551234" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+If this returns the session but calls still don't connect, the `callerId` on your `<Dial>` doesn't match the `caller` you passed to session creation.
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Webhooks" icon="bell" href="/integrations/webhooks">
+    Get notified when sessions complete.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/overview">
+    Explore the full API.
+  </Card>
+  <Card title="Testing" icon="flask" href="/testing">
+    Test with test cards and test mode keys.
+  </Card>
+  <Card title="Custom Platform" icon="plug" href="/integrations/custom-platform">
+    Integrating via a voice agent platform instead?
+  </Card>
+</CardGroup>
