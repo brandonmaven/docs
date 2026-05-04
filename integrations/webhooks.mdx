@@ -8,7 +8,7 @@ description: Receive real-time notifications when payment sessions complete
 Maven sends an HTTP POST to your webhook URL when a payment session completes or fails. This is the recommended way to get payment results back into your system.
 
 <Info>
-  **Voice and chat widget both use the same webhook.** One webhook URL per project, one handler in your code — it processes both channels. Use the `source` field (`"voice"` or `"chat"`) if you need to branch.
+  **Voice and chat widget both use the same webhook.** One webhook URL per project, one handler in your code — it processes both channels. Use the `caller` field to distinguish: it's the customer's phone number for voice, and `null` for chat.
 </Info>
 
 ## When Webhooks Fire
@@ -38,25 +38,24 @@ All webhook payloads share the same top-level fields. The `processor` object var
 
 ### Voice vs Chat
 
-The payload is **almost identical for voice and chat** — only two fields differ:
+The payload is **almost identical for voice and chat** — only one field differs:
 
-- **`source`** is `"voice"` or `"chat"` — tells you which channel collected the payment
-- **`caller`** is the customer's phone number for voice sessions, and `null` for chat sessions (no phone)
+- **`caller`** is the customer's phone number for voice sessions, and `null` for chat sessions (no phone involved)
 
-Everything else — `event`, `status`, `processor`, `card_brand`, `card_last4`, error codes — is the same. A single webhook handler works for both.
+Everything else — `status`, `processor`, `card_brand`, `card_last4`, error codes — is the same. A single webhook handler works for both.
 
 <Tabs>
   <Tab title="Chat (Widget)">
     ```json
     {
-      "event": "payment.success",
       "session_id": "a1b2c3d4-...",
       "status": "payment-success",
-      "amount": 4999,
+      "project": "my-store",
+      "environment": "live",
+      "amount": 49.99,
       "currency": "USD",
       "mode": "charge",
       "gateway": "stripe",
-      "source": "chat",
       "caller": null,
       "card_brand": "visa",
       "card_last4": "4242",
@@ -72,14 +71,14 @@ Everything else — `event`, `status`, `processor`, `card_brand`, `card_last4`, 
   <Tab title="Voice (Phone)">
     ```json
     {
-      "event": "payment.success",
       "session_id": "a1b2c3d4-...",
       "status": "payment-success",
-      "amount": 4999,
+      "project": "my-store",
+      "environment": "live",
+      "amount": 49.99,
       "currency": "USD",
       "mode": "charge",
       "gateway": "stripe",
-      "source": "voice",
       "caller": "+14155551234",
       "card_brand": "visa",
       "card_last4": "4242",
@@ -100,10 +99,11 @@ Everything else — `event`, `status`, `processor`, `card_brand`, `card_last4`, 
   <Tab title="Stripe (Charge)">
     ```json
     {
-      "event": "payment.success",
       "session_id": "a1b2c3d4-...",
       "status": "payment-success",
-      "amount": 4999,
+      "project": "my-store",
+      "environment": "live",
+      "amount": 49.99,
       "currency": "USD",
       "mode": "charge",
       "gateway": "stripe",
@@ -124,10 +124,11 @@ Everything else — `event`, `status`, `processor`, `card_brand`, `card_last4`, 
   <Tab title="Stripe (Tokenize)">
     ```json
     {
-      "event": "payment.success",
       "session_id": "a1b2c3d4-...",
       "status": "payment-success",
-      "amount": 4999,
+      "project": "my-store",
+      "environment": "live",
+      "amount": 49.99,
       "currency": "USD",
       "mode": "tokenize",
       "gateway": "stripe",
@@ -147,10 +148,11 @@ Everything else — `event`, `status`, `processor`, `card_brand`, `card_last4`, 
   <Tab title="Authorize.net (Charge)">
     ```json
     {
-      "event": "payment.success",
       "session_id": "a1b2c3d4-...",
       "status": "payment-success",
-      "amount": 4999,
+      "project": "my-store",
+      "environment": "live",
+      "amount": 49.99,
       "currency": "USD",
       "mode": "charge",
       "gateway": "authorizenet",
@@ -175,10 +177,11 @@ Everything else — `event`, `status`, `processor`, `card_brand`, `card_last4`, 
   <Tab title="Authorize.net (Auth-Only)">
     ```json
     {
-      "event": "payment.authorized",
       "session_id": "a1b2c3d4-...",
       "status": "payment-authorized",
-      "amount": 4999,
+      "project": "my-store",
+      "environment": "live",
+      "amount": 49.99,
       "currency": "USD",
       "mode": "charge",
       "gateway": "authorizenet",
@@ -205,10 +208,11 @@ Everything else — `event`, `status`, `processor`, `card_brand`, `card_last4`, 
   <Tab title="Authorize.net (Tokenize)">
     ```json
     {
-      "event": "payment.success",
       "session_id": "a1b2c3d4-...",
       "status": "payment-success",
-      "amount": 4999,
+      "project": "my-store",
+      "environment": "live",
+      "amount": 49.99,
       "currency": "USD",
       "mode": "tokenize",
       "gateway": "authorizenet",
@@ -227,10 +231,11 @@ Everything else — `event`, `status`, `processor`, `card_brand`, `card_last4`, 
   <Tab title="Braintree (Charge)">
     ```json
     {
-      "event": "payment.success",
       "session_id": "a1b2c3d4-...",
       "status": "payment-success",
-      "amount": 4999,
+      "project": "my-store",
+      "environment": "live",
+      "amount": 49.99,
       "currency": "USD",
       "mode": "charge",
       "gateway": "braintree",
@@ -251,10 +256,11 @@ Everything else — `event`, `status`, `processor`, `card_brand`, `card_last4`, 
   <Tab title="Braintree (Tokenize)">
     ```json
     {
-      "event": "payment.success",
       "session_id": "a1b2c3d4-...",
       "status": "payment-success",
-      "amount": 4999,
+      "project": "my-store",
+      "environment": "live",
+      "amount": 49.99,
       "currency": "USD",
       "mode": "tokenize",
       "gateway": "braintree",
@@ -273,10 +279,11 @@ Everything else — `event`, `status`, `processor`, `card_brand`, `card_last4`, 
   <Tab title="Shift4 (Charge)">
     ```json
     {
-      "event": "payment.success",
       "session_id": "a1b2c3d4-...",
       "status": "payment-success",
-      "amount": 4999,
+      "project": "my-store",
+      "environment": "live",
+      "amount": 49.99,
       "currency": "USD",
       "mode": "charge",
       "gateway": "shift4",
@@ -296,10 +303,11 @@ Everything else — `event`, `status`, `processor`, `card_brand`, `card_last4`, 
   <Tab title="Shift4 (Tokenize)">
     ```json
     {
-      "event": "payment.success",
       "session_id": "a1b2c3d4-...",
       "status": "payment-success",
-      "amount": 4999,
+      "project": "my-store",
+      "environment": "live",
+      "amount": 49.99,
       "currency": "USD",
       "mode": "tokenize",
       "gateway": "shift4",
@@ -318,10 +326,11 @@ Everything else — `event`, `status`, `processor`, `card_brand`, `card_last4`, 
   <Tab title="Fiserv (Charge)">
     ```json
     {
-      "event": "payment.success",
       "session_id": "a1b2c3d4-...",
       "status": "payment-success",
-      "amount": 4999,
+      "project": "my-store",
+      "environment": "live",
+      "amount": 49.99,
       "currency": "USD",
       "mode": "charge",
       "gateway": "fiserv",
@@ -346,10 +355,11 @@ Everything else — `event`, `status`, `processor`, `card_brand`, `card_last4`, 
   <Tab title="Fiserv (Tokenize)">
     ```json
     {
-      "event": "payment.success",
       "session_id": "a1b2c3d4-...",
       "status": "payment-success",
-      "amount": 4999,
+      "project": "my-store",
+      "environment": "live",
+      "amount": 49.99,
       "currency": "USD",
       "mode": "tokenize",
       "gateway": "fiserv",
@@ -371,14 +381,14 @@ Everything else — `event`, `status`, `processor`, `card_brand`, `card_last4`, 
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `event` | string | `"payment.success"`, `"payment.authorized"`, or `"payment.failed"` |
 | `session_id` | string | Session UUID |
 | `status` | string | `"payment-success"`, `"payment-authorized"`, or `"payment-failed"` |
-| `amount` | integer | Amount in **cents** (e.g., `4999` = $49.99) |
+| `project` | string | App slug |
+| `environment` | string | `"test"` or `"live"` |
+| `amount` | number | Amount in **dollars** (e.g., `49.99`) |
 | `currency` | string | Currency code (e.g., `"USD"`) |
 | `mode` | string | `"charge"` or `"tokenize"` |
 | `gateway` | string | `"stripe"`, `"authorizenet"`, `"braintree"`, `"shift4"`, or `"fiserv"` |
-| `source` | string | `"voice"` or `"chat"` — which channel collected the payment |
 | `caller` | string \| null | Caller phone number in E.164 format (voice only; `null` for chat) |
 | `card_brand` | string \| null | Card brand (visa, mastercard, amex, etc.) |
 | `card_last4` | string \| null | Last 4 digits of the card |
@@ -640,7 +650,7 @@ The `processor` object contains different fields depending on the gateway and mo
     | `fiserv_transaction_id` | Fiserv `ipgTransactionId` |
     | `fiserv_order_id` | Fiserv `orderId` |
     | `fiserv_payment_token` | Reusable Fiserv payment token (also returned on each charge for re-use) |
-    | `fiserv_state` | `"CAPTURED"` (auto) or `"AUTHORIZED"` (auth-only) |
+    | `fiserv_state` | `"CAPTURED"` |
     | `fiserv_status` | `"APPROVED"` on success |
     | `approval_code` | Fiserv authorization code |
     | `response_code` | Processor response code (`"00"` = success) |
@@ -688,17 +698,16 @@ async def maven_webhook(request: Request):
     payload = await request.json()
     session_id = payload["session_id"]
     status = payload["status"]
-    source = payload.get("source", "voice")  # "voice" or "chat"
 
     if status == "payment-success":
         card_last4 = payload.get("card_last4")
         caller = payload.get("caller")  # phone for voice, None for chat
         processor = payload.get("processor", {})
         # Update your order, send receipt, etc.
-        await handle_payment_success(session_id, processor, source=source)
+        await handle_payment_success(session_id, processor)
     elif status == "payment-failed":
         error = payload.get("error", {})
-        await handle_payment_failure(session_id, error, source=source)
+        await handle_payment_failure(session_id, error)
 
     return {"status": "ok"}
 ```
