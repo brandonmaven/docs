@@ -315,6 +315,56 @@ Everything else — `event`, `status`, `processor`, `card_brand`, `card_last4`, 
     }
     ```
   </Tab>
+  <Tab title="Fiserv (Charge)">
+    ```json
+    {
+      "event": "payment.success",
+      "session_id": "a1b2c3d4-...",
+      "status": "payment-success",
+      "amount": 4999,
+      "currency": "USD",
+      "mode": "charge",
+      "gateway": "fiserv",
+      "caller": "+14155551234",
+      "card_brand": "VISA",
+      "card_last4": "4977",
+      "processor": {
+        "fiserv_transaction_id": "84653901038",
+        "fiserv_order_id": "R-ddf385f2-...",
+        "fiserv_payment_token": "A60759FC-B2E7-40E2-BC78-3C230C5AB7CB",
+        "fiserv_state": "CAPTURED",
+        "fiserv_status": "APPROVED",
+        "approval_code": "279391",
+        "response_code": "00",
+        "response_message": "Function performed error-free",
+        "card_brand": "VISA",
+        "card_last4": "4977"
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Fiserv (Tokenize)">
+    ```json
+    {
+      "event": "payment.success",
+      "session_id": "a1b2c3d4-...",
+      "status": "payment-success",
+      "amount": 4999,
+      "currency": "USD",
+      "mode": "tokenize",
+      "gateway": "fiserv",
+      "caller": "+14155551234",
+      "card_brand": "VISA",
+      "card_last4": "4977",
+      "processor": {
+        "fiserv_payment_token": "A60759FC-B2E7-40E2-BC78-3C230C5AB7CB",
+        "ipg_transaction_id": "84653901037",
+        "card_brand": "VISA",
+        "card_last4": "4977"
+      }
+    }
+    ```
+  </Tab>
 </Tabs>
 
 ### Field Reference
@@ -327,7 +377,7 @@ Everything else — `event`, `status`, `processor`, `card_brand`, `card_last4`, 
 | `amount` | integer | Amount in **cents** (e.g., `4999` = $49.99) |
 | `currency` | string | Currency code (e.g., `"USD"`) |
 | `mode` | string | `"charge"` or `"tokenize"` |
-| `gateway` | string | `"stripe"`, `"authorizenet"`, `"braintree"`, or `"shift4"` |
+| `gateway` | string | `"stripe"`, `"authorizenet"`, `"braintree"`, `"shift4"`, or `"fiserv"` |
 | `source` | string | `"voice"` or `"chat"` — which channel collected the payment |
 | `caller` | string \| null | Caller phone number in E.164 format (voice only; `null` for chat) |
 | `card_brand` | string \| null | Card brand (visa, mastercard, amex, etc.) |
@@ -565,6 +615,58 @@ The `processor` object contains different fields depending on the gateway and mo
     | `postal_code` | Billing ZIP/postal code (if collected) |
     | `exp_month` | Card expiration month (if collected) |
     | `exp_year` | Card expiration year (if collected) |
+  </Tab>
+
+  <Tab title="Fiserv">
+    **Charge mode:**
+    ```json
+    {
+      "fiserv_transaction_id": "84653901038",
+      "fiserv_order_id": "R-ddf385f2-...",
+      "fiserv_payment_token": "A60759FC-B2E7-40E2-BC78-3C230C5AB7CB",
+      "fiserv_state": "CAPTURED",
+      "fiserv_status": "APPROVED",
+      "approval_code": "279391",
+      "response_code": "00",
+      "response_message": "Function performed error-free",
+      "card_brand": "VISA",
+      "card_last4": "4977",
+      "postal_code": "90210"
+    }
+    ```
+
+    | Field | Description |
+    |-------|-------------|
+    | `fiserv_transaction_id` | Fiserv `ipgTransactionId` |
+    | `fiserv_order_id` | Fiserv `orderId` |
+    | `fiserv_payment_token` | Reusable Fiserv payment token (also returned on each charge for re-use) |
+    | `fiserv_state` | `"CAPTURED"` (auto) or `"AUTHORIZED"` (auth-only) |
+    | `fiserv_status` | `"APPROVED"` on success |
+    | `approval_code` | Fiserv authorization code |
+    | `response_code` | Processor response code (`"00"` = success) |
+    | `response_message` | Processor response message |
+    | `card_brand` | Card brand (e.g. `VISA`) |
+    | `card_last4` | Last 4 digits |
+    | `postal_code` | Billing ZIP/postal code (if collected) |
+
+    **Tokenize mode:**
+    ```json
+    {
+      "fiserv_payment_token": "A60759FC-B2E7-40E2-BC78-3C230C5AB7CB",
+      "ipg_transaction_id": "84653901037",
+      "card_brand": "VISA",
+      "card_last4": "4977",
+      "postal_code": "90210"
+    }
+    ```
+
+    | Field | Description |
+    |-------|-------------|
+    | `fiserv_payment_token` | Reusable Fiserv payment token (UUID) |
+    | `ipg_transaction_id` | Fiserv `ipgTransactionId` from the tokenization request |
+    | `card_brand` | Card brand |
+    | `card_last4` | Last 4 digits |
+    | `postal_code` | Billing ZIP/postal code (if collected) |
   </Tab>
 </Tabs>
 

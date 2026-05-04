@@ -31,7 +31,7 @@ Add PCI-compliant voice payments to any voice agent platform — Outbox AI, Blan
 ## Prerequisites
 
 1. A Maven account with an [API key](/authentication) (`mvn_test_` for test mode, `mvn_live_` for production)
-2. An app with a [payment gateway connected](/quickstart) (Stripe, Authorize.net, Braintree, or Shift4)
+2. An app with a [payment gateway connected](/quickstart) (Stripe, Authorize.net, Braintree, Shift4, or Fiserv)
 3. A voice agent platform that supports HTTP tool calls and call transfers
 
 ## Step 1 — Create a Payment Session
@@ -70,7 +70,7 @@ curl -X POST https://api.trymaven.com/v1/sessions \
 | `project` | Your app slug from the Maven Dashboard |
 | `caller` | The customer's phone number in E.164 format. **Must match the caller ID on the transferred call.** |
 | `amount` | Payment amount in dollars (e.g. `150.00`) |
-| `gateway` | `stripe`, `authorizenet`, `braintree`, or `shift4` |
+| `gateway` | `stripe`, `authorizenet`, `braintree`, `shift4`, or `fiserv` |
 | `mode` | `charge` (process immediately) or `tokenize` (save card only) |
 | `description` | Optional — what the payment is for |
 | `callback` | Optional — phone number or SIP URI to transfer the caller back to after payment |

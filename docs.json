@@ -86,7 +86,8 @@
               "integrations/stripe-connect",
               "integrations/authorizenet-setup",
               "integrations/braintree-setup",
-              "integrations/shift4-setup"
+              "integrations/shift4-setup",
+              "integrations/fiserv-setup"
             ]
           }
         ]

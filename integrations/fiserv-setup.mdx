@@ -1,0 +1,154 @@
+---
+title: Fiserv Setup
+description: Connect your Fiserv Commerce Hub / Payments Live account to Maven
+---
+
+# Connecting Fiserv
+
+Maven connects to Fiserv (Commerce Hub / Payments Live) using your **API Key** and **API Secret**. These credentials let Maven sign every request with HMAC-SHA256 and create charges or vault cards on your behalf.
+
+Unlike Stripe / Authorize.net / Braintree / Shift4 — which all flow through VGS for tokenization — Fiserv requests go **direct from Maven to Fiserv**. Fiserv signs each request body with HMAC-SHA256 over the raw body, so a tokenization proxy that rewrites the body in transit would invalidate the signature. Raw card data is captured, signed, sent to Fiserv, and dropped from memory immediately after — never stored.
+
+## Prerequisites
+
+- A Fiserv developer account
+- API Key and API Secret
+- A Maven app
+
+## Getting Your Credentials
+
+<Steps>
+  <Step title="Register at portal.fiserv.dev">
+    Go to [portal.fiserv.dev](https://portal.fiserv.dev/) and complete registration. Verify your email and set up MFA.
+  </Step>
+  <Step title="Navigate to API Keys">
+    Once logged in, go to the **API Keys** page. A pre-generated **Test Sandbox Key** is already there with access to all APIs and a dummy Store ID — no approval step needed for sandbox.
+  </Step>
+  <Step title="Copy Credentials">
+    You'll see:
+    - **API Key** — sent in the `Api-Key` header on each request
+    - **API Secret** — used as the HMAC-SHA256 secret to sign each request body
+
+    For production, follow Fiserv's separate onboarding flow to get production keys plus your production base URL.
+  </Step>
+</Steps>
+
+## Connecting in Maven
+
+<Steps>
+  <Step title="Go to Payments">
+    In the [Maven Dashboard](https://app.trymaven.com), open your app and click the **Payments** tab.
+  </Step>
+  <Step title="Click Fiserv">
+    Click the Fiserv card to expand it, then click **Connect Fiserv**.
+  </Step>
+  <Step title="Enter Credentials">
+    - **Environment**: Sandbox or Production
+    - **API Key**: Your Fiserv Api-Key
+    - **API Secret**: Your Fiserv API Secret
+    - **Production Base URL** (optional, production only): Override if Fiserv assigned your tenant a non-default hostname. Leave blank to use the standard hostname.
+  </Step>
+  <Step title="Save">
+    Click **Save Credentials**. Maven stores them per-environment so you can have sandbox and production keys configured side by side.
+  </Step>
+</Steps>
+
+### Sending the form to your customer
+
+If your customer is the merchant (i.e., the Fiserv account is theirs, not yours), click **Copy link** next to Save. That generates a single-use, 7-day link they can open in a browser and paste their credentials directly into a hosted form. Their keys are written to your project without you ever seeing them.
+
+## Sandbox Testing
+
+The portal.fiserv.dev sandbox key works immediately on signup — no approval. Use it with `mvn_test_` API keys to test without real charges.
+
+A useful sandbox test card:
+
+| Field | Value |
+|-------|-------|
+| Number | `4035 8740 0042 4977` |
+| Expiry | Any future date |
+| CVV | `977` |
+
+## Capture Mode
+
+Fiserv supports both immediate capture and authorize-only flows:
+
+- **Charge mode (default)** — `transactionType: "SALE"`. Funds captured immediately.
+- **Auth-only mode** — `transactionType: "PREAUTH"`. Funds held but not captured. You settle later via the Fiserv API or dashboard.
+
+Auth-only is exposed in the SDK by passing `capture_mode="manual"` to the charge function.
+
+## Processor Response Fields
+
+### Charge Mode
+
+| Field | Description |
+|-------|-------------|
+| `fiserv_transaction_id` | Fiserv `ipgTransactionId` |
+| `fiserv_order_id` | Fiserv `orderId` |
+| `fiserv_payment_token` | Reusable payment token (returned on every charge — store it for future re-charges) |
+| `fiserv_state` | `CAPTURED` (auto) or `AUTHORIZED` (manual) |
+| `fiserv_status` | `APPROVED` on success |
+| `approval_code` | Fiserv authorization code |
+| `response_code` | Processor response code (`00` = success) |
+| `response_message` | Processor response message |
+| `card_brand` | Card brand (e.g. `VISA`) |
+| `card_last4` | Last 4 digits |
+
+### Tokenize Mode (Vault)
+
+| Field | Description |
+|-------|-------------|
+| `fiserv_payment_token` | Reusable Fiserv payment token (UUID) |
+| `card_brand` | Card brand |
+| `card_last4` | Last 4 digits |
+| `ipg_transaction_id` | Fiserv `ipgTransactionId` from the tokenization request |
+
+## Using Tokenized Cards
+
+After tokenizing, charge the stored Fiserv `paymentToken` directly. Each request is HMAC-SHA256 signed:
+
+```python
+import base64, hashlib, hmac, json, time, uuid
+import httpx
+
+API_KEY = "your_api_key"
+API_SECRET = "your_api_secret"
+BASE_URL = "https://prod.emea.api.fiservapps.com/sandbox/ipp/payments-gateway/v2"
+
+body = {
+    "requestType": "PaymentTokenSaleTransaction",
+    "transactionAmount": {"total": 49.99, "currency": "USD"},
+    "paymentMethod": {"paymentToken": {"value": "your-fiserv-payment-token"}},
+    "transactionOrigin": "ECOM",
+}
+body_str = json.dumps(body, separators=(",", ":"))
+cri = str(uuid.uuid4())
+ts = str(int(time.time() * 1000))
+raw = (API_KEY + cri + ts + body_str).encode()
+sig = base64.b64encode(hmac.new(API_SECRET.encode(), raw, hashlib.sha256).digest()).decode()
+
+resp = httpx.post(
+    f"{BASE_URL}/payments",
+    content=body_str,
+    headers={
+        "Content-Type": "application/json",
+        "Api-Key": API_KEY,
+        "Client-Request-Id": cri,
+        "Timestamp": ts,
+        "Message-Signature": sig,
+    },
+)
+print(resp.json())
+```
+
+## How Maven differs from other gateways
+
+| | Stripe / Authnet / Braintree / Shift4 | Fiserv |
+|---|---|---|
+| Path | Voice → VGS vault → VGS proxy → processor | Voice → Maven backend → processor (direct) |
+| Auth | Static API key on each call | HMAC-SHA256 signature over the request body |
+| PAN handling | Tokenized at VGS, replaced in transit | Held briefly in Maven backend, sent to Fiserv, dropped |
+| Storage | VGS vault token | Fiserv `paymentToken` (returned on every charge / vault) |
+
+Functionally identical from the merchant's perspective — same dashboard flow, same `mvn_test_` key behavior, same webhook payload shape.
