@@ -5,9 +5,7 @@ description: Connect your Fiserv Commerce Hub / Payments Live account to Maven
 
 # Connecting Fiserv
 
-Maven connects to Fiserv (Commerce Hub / Payments Live) using your **API Key** and **API Secret**. These credentials let Maven sign every request with HMAC-SHA256 and create charges or vault cards on your behalf.
-
-Unlike Stripe / Authorize.net / Braintree / Shift4 — which all flow through VGS for tokenization — Fiserv requests go **direct from Maven to Fiserv**. Fiserv signs each request body with HMAC-SHA256 over the raw body, so a tokenization proxy that rewrites the body in transit would invalidate the signature. Raw card data is captured, signed, sent to Fiserv, and dropped from memory immediately after — never stored.
+Maven connects to Fiserv (Commerce Hub / Payments Live) using your **API Key** and **API Secret**. These credentials let Maven create charges or vault cards on your behalf.
 
 ## Prerequisites
 
@@ -68,15 +66,6 @@ A useful sandbox test card:
 | Number | `4035 8740 0042 4977` |
 | Expiry | Any future date |
 | CVV | `977` |
-
-## Capture Mode
-
-Fiserv supports both immediate capture and authorize-only flows:
-
-- **Charge mode (default)** — `transactionType: "SALE"`. Funds captured immediately.
-- **Auth-only mode** — `transactionType: "PREAUTH"`. Funds held but not captured. You settle later via the Fiserv API or dashboard.
-
-Auth-only is exposed in the SDK by passing `capture_mode="manual"` to the charge function.
 
 ## Processor Response Fields
 
@@ -142,13 +131,3 @@ resp = httpx.post(
 print(resp.json())
 ```
 
-## How Maven differs from other gateways
-
-| | Stripe / Authnet / Braintree / Shift4 | Fiserv |
-|---|---|---|
-| Path | Voice → VGS vault → VGS proxy → processor | Voice → Maven backend → processor (direct) |
-| Auth | Static API key on each call | HMAC-SHA256 signature over the request body |
-| PAN handling | Tokenized at VGS, replaced in transit | Held briefly in Maven backend, sent to Fiserv, dropped |
-| Storage | VGS vault token | Fiserv `paymentToken` (returned on every charge / vault) |
-
-Functionally identical from the merchant's perspective — same dashboard flow, same `mvn_test_` key behavior, same webhook payload shape.
