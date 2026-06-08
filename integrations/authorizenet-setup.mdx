@@ -117,6 +117,43 @@ When Authorize Only is enabled, the session reaches the new terminal status `pay
 | `U` | AVS unavailable |
 | `P` | Not applicable for this card type |
 
+### Improving AVS Coverage
+
+By default, voice sessions only collect the ZIP code from the caller — so AVS returns `Z` (zip match only) or `U` (unavailable) when no ZIP was captured. Strict Authnet AVS reject filters often decline both, which can block legitimate transactions.
+
+To get a full AVS match (`Y`), pass a `billing_address` block on session creation. We forward it to Authnet's `billTo` on both charge and tokenize paths:
+
+```bash
+POST /v1/sessions
+Authorization: Bearer mvn_live_xxx
+Content-Type: application/json
+
+{
+  "project": "my-store",
+  "caller": "+14155551234",
+  "amount": "49.99",
+  "mode": "charge",
+  "gateway": "authorizenet",
+  "billing_address": {
+    "street": "123 Main St",
+    "city":   "Austin",
+    "state":  "TX",
+    "zip":    "78701",
+    "country": "US"
+  }
+}
+```
+
+<Note>
+  Always pass the cardholder's **billing** address — the one on file with the card issuer — not the shipping address. AVS only matches against billing. If you reuse a shipping address that differs from billing, AVS will return `N` (no match), which most fraud filters reject.
+</Note>
+
+`first_name` and `last_name` on the `billing_address` are optional — when omitted, we fall back to the cardholder name collected during card capture. See the [API reference for `POST /v1/sessions`](/api-reference/POST/v1/sessions) for the full field list and validation rules.
+
+#### Tokenize mode (CIM)
+
+When you pass `billing_address` with `mode: "tokenize"`, the address is stored on the resulting CIM Payment Profile. Subsequent charges against that profile (via `createTransactionFromProfile`) inherit the billing address automatically — no need to re-send it on the charge call, unless you explicitly override `billTo` in your charge request.
+
 **`cvv_result_code`** — CVV match:
 
 | Code | Meaning |
