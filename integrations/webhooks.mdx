@@ -32,6 +32,123 @@ Set a webhook URL per app in the [Maven Dashboard](https://app.trymaven.com):
 3. Enter your webhook URL (must be HTTPS in production)
 4. Save
 
+## Verifying Webhook Signatures
+
+Your webhook URL is public, so anyone could POST a forged event to it. Maven signs every webhook with an HMAC so you can confirm it genuinely came from us and wasn't altered in transit. Verification is **optional but strongly recommended** for production.
+
+<Info>
+  Signing is **backward compatible** — it only adds a header. If you don't verify it, your existing handler keeps working unchanged. Adopt verification whenever you're ready.
+</Info>
+
+### The signing secret
+
+Each app has its own signing secret (format `whsec_…`). Find it in the [Dashboard](https://app.trymaven.com) under **App → Settings → Webhook → Signing secret**, where you can reveal, copy, and **rotate** it.
+
+<Warning>
+  Rotating generates a new secret and **invalidates the old one immediately**. Update your server with the new value before (or right after) rotating, or signatures will start failing.
+</Warning>
+
+### The `Maven-Signature` header
+
+Every webhook request includes:
+
+```
+Maven-Signature: t=1718500000,v1=4f3a9c...e1
+```
+
+| Part | Meaning |
+|------|---------|
+| `t` | Unix timestamp (seconds) when we signed the request |
+| `v1` | `HMAC_SHA256(secret, "{t}.{raw_body}")` as lowercase hex |
+
+The timestamp is part of the signed content, so it can't be altered without breaking the signature — this is what protects you against replay attacks.
+
+### How to verify
+
+1. Read the **raw request body** — the exact bytes, before any JSON parsing/re-serialization.
+2. Parse `t` and `v1` from the `Maven-Signature` header.
+3. Compute `HMAC_SHA256(secret, "{t}." + raw_body)`.
+4. Constant-time compare it against `v1`.
+5. Reject if `t` is older than your tolerance (e.g. 5 minutes) to block replays.
+
+<Tabs>
+  <Tab title="Python (FastAPI)">
+    ```python
+    import hmac, hashlib, time, json
+    from fastapi import FastAPI, Request, HTTPException
+
+    WEBHOOK_SECRET = "whsec_..."  # from the dashboard
+    TOLERANCE_SECONDS = 300
+
+    def verify(raw_body: bytes, signature_header: str) -> bool:
+        try:
+            parts = dict(p.split("=", 1) for p in signature_header.split(","))
+            t, sig = parts["t"], parts["v1"]
+        except (ValueError, KeyError):
+            return False
+        if abs(time.time() - int(t)) > TOLERANCE_SECONDS:
+            return False  # too old — possible replay
+        signed = f"{t}.".encode() + raw_body
+        expected = hmac.new(WEBHOOK_SECRET.encode(), signed, hashlib.sha256).hexdigest()
+        return hmac.compare_digest(expected, sig)
+
+    app = FastAPI()
+
+    @app.post("/webhooks/maven")
+    async def maven_webhook(request: Request):
+        raw = await request.body()  # RAW bytes, not request.json()
+        if not verify(raw, request.headers.get("Maven-Signature", "")):
+            raise HTTPException(status_code=401, detail="invalid signature")
+        payload = json.loads(raw)
+        # ... trusted
+        return {"status": "ok"}
+    ```
+  </Tab>
+  <Tab title="Node (Express)">
+    ```js
+    const crypto = require("crypto");
+    const WEBHOOK_SECRET = process.env.MAVEN_WEBHOOK_SECRET;
+    const TOLERANCE_SECONDS = 300;
+
+    function verify(rawBody, signatureHeader) {
+      const parts = Object.fromEntries(
+        (signatureHeader || "").split(",").map((p) => p.split("=")),
+      );
+      const { t, v1 } = parts;
+      if (!t || !v1) return false;
+      if (Math.abs(Date.now() / 1000 - Number(t)) > TOLERANCE_SECONDS) return false;
+      const expected = crypto
+        .createHmac("sha256", WEBHOOK_SECRET)
+        .update(`${t}.`)
+        .update(rawBody) // Buffer of the raw body
+        .digest("hex");
+      return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(v1));
+    }
+
+    // Capture the raw body so the bytes match what we signed:
+    app.post(
+      "/webhooks/maven",
+      express.raw({ type: "application/json" }),
+      (req, res) => {
+        if (!verify(req.body, req.get("Maven-Signature"))) {
+          return res.status(401).send("invalid signature");
+        }
+        const payload = JSON.parse(req.body.toString());
+        res.sendStatus(200);
+      },
+    );
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+  **Sign the raw bytes, not the parsed JSON.** `{"a":1,"b":2}` and `{"b":2,"a":1}` are equal objects but different bytes, so re-serializing before hashing produces a mismatching signature. Always HMAC the request body exactly as received, and use a constant-time comparison (`hmac.compare_digest` / `crypto.timingSafeEqual`).
+</Warning>
+
+<Tip>
+  Use the **Test** button next to your webhook URL in the dashboard — it sends a signed sample payload so you can validate your verification code end-to-end.
+</Tip>
+
 ## Payload Format
 
 All webhook payloads share the same top-level fields. The `processor` object varies by gateway and mode — see [Processor Fields by Gateway](#processor-fields-by-gateway) for the full specs.
@@ -716,18 +833,18 @@ async def maven_webhook(request: Request):
 
 <AccordionGroup>
   <Accordion title="Always return 200 quickly">
-    Return a `200` response immediately and process the webhook asynchronously. If your endpoint times out, the webhook will not be retried.
+    Return a `200` response immediately and process the webhook asynchronously. Maven uses a 5-second delivery timeout; if your endpoint is slower, the request is treated as failed and retried.
   </Accordion>
   <Accordion title="Use idempotent handlers">
     Use the `session_id` to deduplicate — check if you've already processed this session before acting on it.
   </Accordion>
-  <Accordion title="Validate the payload">
-    Verify that the `session_id` in the webhook belongs to your organization by checking it against the API:
+  <Accordion title="Verify the signature">
+    Confirm the event came from Maven by verifying the `Maven-Signature` header — see [Verifying Webhook Signatures](#verifying-webhook-signatures). As an additional check, you can also confirm the `session_id` belongs to your organization via the API:
     ```
     GET /v1/sessions/{session_id}
     ```
   </Accordion>
   <Accordion title="Handle failures gracefully">
-    Webhook delivery is fire-and-forget. If your endpoint is down, the webhook is lost. For critical flows, also poll the session status as a fallback.
+    If your endpoint returns a 5xx or times out, Maven retries up to 3 times with exponential backoff (1s, 2s, 4s). A 4xx response is treated as a rejection and is **not** retried. If all attempts fail the webhook is dropped, so for critical flows also poll the session status as a fallback.
   </Accordion>
 </AccordionGroup>
