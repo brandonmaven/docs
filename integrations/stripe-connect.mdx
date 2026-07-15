@@ -57,27 +57,37 @@ When a payment succeeds via Stripe, the `processor` object in the [GET session](
 
 | Field | Description |
 |-------|-------------|
-| `stripe_customer_id` | Customer created on your Stripe account (e.g., `cus_xxx`) |
-| `payment_method_id` | PaymentMethod ID (e.g., `pm_xxx`) |
+| `stripe_customer_id` | Customer on **your connected account** (e.g., `cus_xxx`) |
+| `payment_method_id` | PaymentMethod on **your connected account**, already attached to that customer (e.g., `pm_xxx`) |
 | `card_brand` | Card brand |
 | `card_last4` | Last 4 digits |
 
+<Info>
+  Both `stripe_customer_id` and `payment_method_id` live on **your own connected Stripe account** — not on Maven's platform account. Query and charge them with **your own Stripe secret key** (no `stripe_account` header needed, because they're already on your account). Each tokenize creates a **dedicated customer with exactly one saved card**, so the `customer` + `payment_method` pair uniquely identifies the card — you never have to guess among multiple payment methods.
+</Info>
+
 ## Using Tokenized Cards
 
-After tokenizing, use the returned `stripe_customer_id` and `payment_method_id` to create charges via the Stripe API:
+After tokenizing, use the returned `stripe_customer_id` and `payment_method_id` to create charges via the Stripe API. Run this with **your own Stripe secret key** — the customer and payment method are on your account:
 
 ```python
 import stripe
+
+stripe.api_key = "sk_live_...your_account_key..."
 
 stripe.PaymentIntent.create(
     amount=4999,
     currency="usd",
     customer="cus_xxx",      # from processor.stripe_customer_id
-    payment_method="pm_xxx", # from processor.payment_method_id
+    payment_method="pm_xxx", # from processor.payment_method_id (on your account)
     confirm=True,
     off_session=True,
 )
 ```
+
+<Tip>
+  Pass **both** `customer` and `payment_method`. Stripe treats the customer as optional in general, but because the card is saved to that customer, passing it is the reliable way to charge the intended card. As an extra safeguard you can verify `card_last4` before charging.
+</Tip>
 
 ## Disconnecting
 
