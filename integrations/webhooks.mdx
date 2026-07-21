@@ -829,6 +829,23 @@ async def maven_webhook(request: Request):
     return {"status": "ok"}
 ```
 
+## Recovering a missed webhook / checking status
+
+Webhook delivery can fail (endpoint down, network blip). To reconcile, call the **authenticated** session API with your API key. It returns the current `status` and `processor` details for **both voice and chat** sessions — including terminal states like `payment-success` — so it's the source of truth after a missed webhook:
+
+```
+GET /v1/sessions/{session_id}
+Authorization: Bearer <your_api_key>
+```
+
+<Warning>
+  Do **not** use `GET /v1/widget-sessions/{session_id}` for reconciliation. That is the chat **iframe's** internal, unauthenticated endpoint — for security it returns **`410 Gone` with no data** once a payment succeeds (so completed transactions can't be scraped by guessing IDs). That's why its success response doesn't match the webhook. Use the authenticated `GET /v1/sessions/{session_id}` above.
+</Warning>
+
+<Note>
+  The `processor` object here uses **gateway-namespaced** field names (e.g. `processor.shift4_charge_id`, `processor.authnet_transaction_id`), whereas the webhook payload uses raw keys (e.g. `processor.transaction_id`). Same values, different names — map accordingly.
+</Note>
+
 ## Best Practices
 
 <AccordionGroup>

@@ -33,7 +33,7 @@ Endpoints for payments collected over phone calls:
 |--------|----------|-------------|
 | `POST` | `/v1/sessions` | Create a new voice payment session |
 | `GET` | `/v1/sessions` | Get session by caller phone |
-| `GET` | `/v1/sessions/{session_id}` | Get session by ID |
+| `GET` | `/v1/sessions/{session_id}` | Get session by ID — status + processor details, for **voice and chat**. Use this for status checks and missed-webhook reconciliation. |
 | `POST` | `/v1/sessions/{session_id}/cancel` | Cancel a session |
 
 ### Widget Sessions (Chat / Web)
@@ -43,7 +43,7 @@ Endpoints for payments collected via the embeddable widget. See the [Chat Widget
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `POST` | `/v1/widget-sessions` | Create a new chat/web payment session |
-| `GET` | `/v1/widget-sessions/{session_id}` | Session details for the iframe (session_id is the credential) |
+| `GET` | `/v1/widget-sessions/{session_id}` | Iframe-internal session details (unauthenticated). Returns `410 Gone` once terminal — **not for reconciliation**; use `GET /v1/sessions/{session_id}` instead. |
 | `POST` | `/v1/widget-sessions/{session_id}/charge` | Submit card data — called internally by the iframe, not by merchants |
 
 ### Auth
