@@ -70,7 +70,7 @@ curl -X POST https://api.trymaven.com/v1/sessions \
 | `project` | Your app slug from the Maven Dashboard |
 | `caller` | The customer's phone number in E.164 format. **Must match the caller ID on the transferred call.** |
 | `amount` | Payment amount in dollars (e.g. `150.00`) |
-| `gateway` | `stripe`, `authorizenet`, `braintree`, `shift4`, or `fiserv` |
+| `gateway` | `stripe`, `authorizenet`, `braintree`, `shift4`, `fiserv`, `jpmorgan`, or `webhook` (card forwarding to your own endpoint) |
 | `mode` | `charge` (process immediately) or `tokenize` (save card only) |
 | `description` | Optional — what the payment is for |
 | `callback` | Optional — phone number or SIP URI to transfer the caller back to after payment |

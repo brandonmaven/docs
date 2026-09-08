@@ -1,0 +1,150 @@
+---
+title: J.P. Morgan Setup
+description: Connect your J.P. Morgan Payments (Chase) account to Maven
+---
+
+# Connecting J.P. Morgan
+
+Maven connects to J.P. Morgan Payments (Online Payments API) using your **Client ID**, **Client Secret**, and **Merchant ID**. Maven exchanges the Client ID/Secret for short-lived OAuth bearer tokens and uses them to create charges or store cards on your behalf.
+
+## Prerequisites
+
+- A J.P. Morgan Payments developer account
+- Client ID, Client Secret, and Merchant ID
+- A Maven app
+
+## Getting Your Credentials
+
+<Steps>
+  <Step title="Register at developer.payments.jpmorgan.com">
+    Go to [developer.payments.jpmorgan.com](https://developer.payments.jpmorgan.com/) and create a developer account (email or GitHub/LinkedIn/Google login).
+  </Step>
+  <Step title="Create a workspace project">
+    In your workspace, create a project and add the **Online Payments API**. Sandbox credentials are issued instantly — no approval step.
+  </Step>
+  <Step title="Copy Credentials">
+    From the project's **Get set up** section, copy:
+    - **Client ID** — OAuth client identifier
+    - **Client Secret** — OAuth client secret
+    - **Merchant ID** — sent as the `merchant-id` header on every request (the sandbox/mock environment uses `998482157630`)
+
+    For production, credentials are issued by the J.P. Morgan implementations team during merchant onboarding. Onboarding is sales-led and typically takes 6–12 weeks; ask them to confirm your **production base URL** and OAuth scope at the same time.
+  </Step>
+</Steps>
+
+## Connecting in Maven
+
+<Steps>
+  <Step title="Go to Payments">
+    In the [Maven Dashboard](https://app.trymaven.com), open your app and click the **Payments** tab.
+  </Step>
+  <Step title="Click J.P. Morgan">
+    Click the J.P. Morgan card to expand it, then click **Connect J.P. Morgan**.
+  </Step>
+  <Step title="Enter Credentials">
+    - **Environment**: Sandbox or Production
+    - **Client ID**: Your OAuth Client ID
+    - **Client Secret**: Your OAuth Client Secret
+    - **Merchant ID**: Your J.P. Morgan Merchant ID
+    - **Production Base URL** (optional, production only): Override if J.P. Morgan assigned your tenant a non-default hostname. Leave blank to use the standard hostname.
+  </Step>
+  <Step title="Save">
+    Click **Save Credentials**. Maven stores them per-environment so you can have sandbox and production credentials configured side by side.
+  </Step>
+</Steps>
+
+### Sending the form to your customer
+
+If your customer is the merchant (i.e., the J.P. Morgan account is theirs, not yours), click **Copy link** next to Save. That generates a single-use, 7-day link they can open in a browser and paste their credentials directly into a hosted form. Their credentials are written to your project without you ever seeing them.
+
+## Sandbox Testing
+
+Sandbox credentials work immediately on signup against J.P. Morgan's mock environment. Use them with `mvn_test_` API keys to test without real charges.
+
+A useful sandbox test card:
+
+| Field | Value |
+|-------|-------|
+| Number | `4012 0000 3333 0026` |
+| Expiry | Any future date |
+| CVV | Any 3 digits |
+
+<Note>
+The J.P. Morgan mock environment approves every transaction — declines can only be exercised with the test credentials issued at merchant onboarding.
+</Note>
+
+## Processor Response Fields
+
+### Charge Mode
+
+| Field | Description |
+|-------|-------------|
+| `jpmorgan_transaction_id` | J.P. Morgan `transactionId` |
+| `jpmorgan_state` | `CLOSED` (captured) or `OPEN` (authorized) |
+| `jpmorgan_status` | `SUCCESS` on approval |
+| `approval_code` | Issuer approval code |
+| `response_code` | `APPROVED` on success |
+| `response_message` | Processor response message |
+| `card_brand` | Card brand (e.g. `visa`) |
+| `card_last4` | Last 4 digits |
+
+### Tokenize Mode (Stored Card)
+
+In tokenize mode, Maven runs a $0 verification and stores the card at J.P. Morgan.
+
+| Field | Description |
+|-------|-------------|
+| `jpmorgan_consumer_profile_id` | Consumer profile ID (when profile creation is enabled for your merchant) |
+| `jpmorgan_payment_method_id` | Payment method ID within the consumer profile |
+| `jpmorgan_payment_token` | Safetech network token — reusable as the `accountNumber` in later charges (returned when Safetech tokenization is enabled) |
+| `jpmorgan_transaction_id` | Verification `transactionId` |
+| `card_brand` | Card brand |
+| `card_last4` | Last 4 digits |
+
+## Using Stored Cards
+
+Charge a stored card directly against the J.P. Morgan API. With a consumer profile:
+
+```python
+import httpx
+
+# 1. Get an OAuth token
+token_resp = httpx.post(
+    "https://id.payments.jpmorgan.com/am/oauth2/alpha/access_token",
+    data={
+        "grant_type": "client_credentials",
+        "scope": "jpm:payments:sandbox",
+        "client_id": "your_client_id",
+        "client_secret": "your_client_secret",
+    },
+)
+access_token = token_resp.json()["access_token"]
+
+# 2. Charge the stored payment method
+resp = httpx.post(
+    "https://api-mock.payments.jpmorgan.com/api/v2/payments",
+    json={
+        "captureMethod": "NOW",
+        "merchantOrderNumber": "order-1042",
+        "amount": 4999,  # minor units — $49.99
+        "currency": "USD",
+        "initiatorType": "CARDHOLDER",
+        "accountOnFile": "STORED",
+        "merchant": {"merchantSoftware": {"companyName": "YourCo", "productName": "YourApp"}},
+        "paymentMethodType": {
+            "consumerProfile": {
+                "consumerProfileId": "your-consumer-profile-id",
+                "paymentMethodId": "your-payment-method-id",
+            }
+        },
+    },
+    headers={
+        "Authorization": f"Bearer {access_token}",
+        "merchant-id": "your_merchant_id",
+        "request-id": "unique-uuid-per-request",
+    },
+)
+print(resp.json())
+```
+
+With a Safetech token, send it as `paymentMethodType.card.accountNumber` instead, keeping `accountOnFile: "STORED"`.

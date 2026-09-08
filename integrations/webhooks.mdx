@@ -492,6 +492,55 @@ Everything else — `status`, `processor`, `card_brand`, `card_last4`, error cod
     }
     ```
   </Tab>
+  <Tab title="J.P. Morgan (Charge)">
+    ```json
+    {
+      "session_id": "a1b2c3d4-...",
+      "status": "payment-success",
+      "project": "my-store",
+      "environment": "live",
+      "amount": 49.99,
+      "currency": "USD",
+      "mode": "charge",
+      "gateway": "jpmorgan",
+      "caller": "+14155551234",
+      "card_brand": "visa",
+      "card_last4": "0026",
+      "processor": {
+        "jpmorgan_transaction_id": "397cc44c-fe58-4ab5-b880-ce5915ea6c59",
+        "jpmorgan_state": "CLOSED",
+        "jpmorgan_status": "SUCCESS",
+        "approval_code": "tst696",
+        "response_code": "APPROVED",
+        "response_message": "Transaction approved by Issuer",
+        "card_brand": "visa",
+        "card_last4": "0026"
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Card Forwarding (Charge)">
+    ```json
+    {
+      "session_id": "a1b2c3d4-...",
+      "status": "payment-success",
+      "project": "my-store",
+      "environment": "live",
+      "amount": 49.99,
+      "currency": "USD",
+      "mode": "charge",
+      "gateway": "webhook",
+      "caller": "+14155551234",
+      "card_brand": "visa",
+      "card_last4": "1111",
+      "processor": {
+        "webhook_transaction_id": "qp_12345",
+        "card_brand": "visa",
+        "card_last4": "1111"
+      }
+    }
+    ```
+  </Tab>
 </Tabs>
 
 ### Field Reference
@@ -505,7 +554,7 @@ Everything else — `status`, `processor`, `card_brand`, `card_last4`, error cod
 | `amount` | number | Amount in **dollars** (e.g., `49.99`) |
 | `currency` | string | Currency code (e.g., `"USD"`) |
 | `mode` | string | `"charge"` or `"tokenize"` |
-| `gateway` | string | `"stripe"`, `"authorizenet"`, `"braintree"`, `"shift4"`, or `"fiserv"` |
+| `gateway` | string | `"stripe"`, `"authorizenet"`, `"braintree"`, `"shift4"`, `"fiserv"`, `"jpmorgan"`, or `"webhook"` |
 | `caller` | string \| null | Caller phone number in E.164 format (voice only; `null` for chat) |
 | `card_brand` | string \| null | Card brand (visa, mastercard, amex, etc.) |
 | `card_last4` | string \| null | Last 4 digits of the card |
@@ -791,6 +840,90 @@ The `processor` object contains different fields depending on the gateway and mo
     |-------|-------------|
     | `fiserv_payment_token` | Reusable Fiserv payment token (UUID) |
     | `ipg_transaction_id` | Fiserv `ipgTransactionId` from the tokenization request |
+    | `card_brand` | Card brand |
+    | `card_last4` | Last 4 digits |
+    | `postal_code` | Billing ZIP/postal code (if collected) |
+  </Tab>
+
+  <Tab title="J.P. Morgan">
+    **Charge mode:**
+    ```json
+    {
+      "jpmorgan_transaction_id": "397cc44c-fe58-4ab5-b880-ce5915ea6c59",
+      "jpmorgan_state": "CLOSED",
+      "jpmorgan_status": "SUCCESS",
+      "approval_code": "tst696",
+      "response_code": "APPROVED",
+      "response_message": "Transaction approved by Issuer",
+      "card_brand": "visa",
+      "card_last4": "0026",
+      "postal_code": "90210"
+    }
+    ```
+
+    | Field | Description |
+    |-------|-------------|
+    | `jpmorgan_transaction_id` | J.P. Morgan `transactionId` |
+    | `jpmorgan_state` | `"CLOSED"` (captured) or `"OPEN"` (authorized) |
+    | `jpmorgan_status` | `"SUCCESS"` on approval |
+    | `approval_code` | Issuer approval code |
+    | `response_code` | `"APPROVED"` on success |
+    | `response_message` | Processor response message |
+    | `card_brand` | Card brand |
+    | `card_last4` | Last 4 digits |
+    | `postal_code` | Billing ZIP/postal code (if collected) |
+
+    **Tokenize mode:**
+    ```json
+    {
+      "jpmorgan_consumer_profile_id": "profile-789",
+      "jpmorgan_payment_method_id": "pm-321",
+      "jpmorgan_payment_token": "4012000845034026",
+      "jpmorgan_transaction_id": "397cc44c-fe58-4ab5-b880-ce5915ea6c59",
+      "card_brand": "visa",
+      "card_last4": "0026",
+      "postal_code": "90210"
+    }
+    ```
+
+    | Field | Description |
+    |-------|-------------|
+    | `jpmorgan_consumer_profile_id` | Consumer profile ID (when profile creation is enabled) |
+    | `jpmorgan_payment_method_id` | Payment method ID within the consumer profile |
+    | `jpmorgan_payment_token` | Safetech network token — reusable as `accountNumber` in later charges |
+    | `jpmorgan_transaction_id` | Verification `transactionId` |
+    | `card_brand` | Card brand |
+    | `card_last4` | Last 4 digits |
+    | `postal_code` | Billing ZIP/postal code (if collected) |
+  </Tab>
+
+  <Tab title="Card Forwarding">
+    With the `webhook` gateway, the processor fields are whatever **your endpoint** returned when Maven forwarded the card — see [Card Forwarding](/integrations/card-forwarding).
+
+    **Charge mode:**
+    ```json
+    {
+      "webhook_transaction_id": "qp_12345",
+      "card_brand": "visa",
+      "card_last4": "1111",
+      "postal_code": "90210"
+    }
+    ```
+
+    **Tokenize mode:**
+    ```json
+    {
+      "webhook_token": "tok_abc",
+      "card_brand": "visa",
+      "card_last4": "1111",
+      "postal_code": "90210"
+    }
+    ```
+
+    | Field | Description |
+    |-------|-------------|
+    | `webhook_transaction_id` | The `transaction_id` your forwarding endpoint returned |
+    | `webhook_token` | The `token` your forwarding endpoint returned (tokenize mode) |
     | `card_brand` | Card brand |
     | `card_last4` | Last 4 digits |
     | `postal_code` | Billing ZIP/postal code (if collected) |

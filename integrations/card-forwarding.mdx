@@ -1,0 +1,153 @@
+---
+title: Card Forwarding
+description: Receive collected card data at your own PCI-compliant endpoint and process it with any processor
+---
+
+# Card Forwarding (Webhook Gateway)
+
+If your organization is **PCI-DSS compliant** and runs its own processor integration, Maven doesn't have to charge the card at all. With the `webhook` gateway, Maven collects the card over the phone call, then POSTs the full card data to your HTTPS endpoint. Your synchronous response decides whether the session succeeds — you charge (or vault) the card with any processor you like.
+
+<Warning>
+Your receiving endpoint takes full cardholder data (PAN, expiry, CVV) into your PCI scope. Only use this integration if your organization is PCI-DSS compliant for handling CHD. Never store the CVV.
+</Warning>
+
+## How It Works
+
+1. You create a session with `"gateway": "webhook"`.
+2. The caller enters their card on the phone as usual.
+3. Maven POSTs the card data to your configured endpoint — signed, HTTPS-only, exactly once.
+4. Your endpoint charges/vaults the card with your processor and responds `success: true` or `success: false`.
+5. Maven finishes the call accordingly and fires the normal (card-free) status webhook.
+
+## Setup
+
+<Steps>
+  <Step title="Go to Payments">
+    In the [Maven Dashboard](https://app.trymaven.com), open your app and click the **Payments** tab.
+  </Step>
+  <Step title="Open Card Forwarding">
+    Click the **Card Forwarding** card to expand it.
+  </Step>
+  <Step title="Save your endpoint">
+    Enter your HTTPS endpoint URL per environment (Test / Live). HTTP URLs are rejected. Test-mode API keys (`mvn_test_`) forward to your test endpoint; live keys to your live endpoint.
+  </Step>
+  <Step title="Store the signing secret">
+    On first save you receive a **signing secret** (`whsec_…`) — it is shown only once. Use it to verify the `Maven-Signature` header on every forwarded payload.
+  </Step>
+</Steps>
+
+## Creating Sessions
+
+```bash
+curl -X POST https://api.trymaven.com/v1/sessions \
+  -H "Authorization: Bearer mvn_test_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project": "my-store",
+    "caller": "+14155551234",
+    "amount": 25.99,
+    "mode": "charge",
+    "gateway": "webhook"
+  }'
+```
+
+## The Forwarded Request
+
+When the caller finishes entering their card, Maven POSTs to your endpoint:
+
+```
+POST <your endpoint>
+Content-Type: application/json
+Maven-Signature: t=1725370000,v1=<hex hmac-sha256>
+```
+
+```json
+{
+  "type": "payment_method.collected",
+  "session_id": "a1b2c3d4-...",
+  "environment": "test",
+  "mode": "charge",
+  "amount": 2599,
+  "currency": "USD",
+  "description": "Order #1042",
+  "caller": "+14155551234",
+  "card": {
+    "number": "4111111111111111",
+    "exp_month": "05",
+    "exp_year": "2027",
+    "cvv": "123",
+    "cardholder_name": "Jane Doe",
+    "postal_code": "90210",
+    "brand": "visa",
+    "last4": "1111"
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `type` | Always `"payment_method.collected"` |
+| `session_id` | Session UUID — use as your idempotency key |
+| `environment` | `"test"` or `"live"` |
+| `mode` | `"charge"` or `"tokenize"` — in tokenize mode, vault the card in your own system and return a `token` |
+| `amount` | Amount in **minor units** (cents) — note this differs from the status webhook, which uses dollars |
+| `card` | Full card data. Fields that weren't collected (e.g. `cardholder_name`, `postal_code`) are `null` |
+
+### Verifying the Signature
+
+Card-forwarding requests are signed with your card-forwarding secret using the same scheme as [status webhooks](/integrations/webhooks#verifying-webhook-signatures):
+
+```
+signed_content = "{t}." + raw_request_body
+expected       = hex(hmac_sha256(secret, signed_content))
+```
+
+Compare `expected` to the `v1` value with a constant-time comparison, and reject requests whose `t` timestamp is older than your tolerance (e.g. 5 minutes).
+
+<Note>
+The card-forwarding secret (`whsec_…`, shown once when you save the endpoint) is separate from your project's status-webhook secret.
+</Note>
+
+## Your Response
+
+Respond within **30 seconds**. Maven makes exactly **one** attempt per session — it never retries, so you can't be double-charged by retry storms. Still, treat `session_id` as your idempotency key.
+
+Approve (HTTP 200):
+
+```json
+{ "success": true, "transaction_id": "qp_12345", "token": "tok_abc" }
+```
+
+Decline (HTTP 200):
+
+```json
+{ "success": false, "error_code": "card_declined", "error_message": "Insufficient funds" }
+```
+
+| Field | Description |
+|-------|-------------|
+| `success` | Required. `true` completes the session; `false` fails it |
+| `transaction_id` | Optional. Your processor's transaction ID — stored on the session |
+| `token` | Optional (tokenize mode). Your vault token — stored on the session |
+| `error_code` / `error_message` | Optional on declines — surfaced in the session status and status webhook |
+
+Any non-2xx status, invalid JSON, or timeout fails the session with `webhook_gateway_error` and the caller hears the failure prompt.
+
+## Processor Response Fields
+
+Your returned IDs are echoed on the session (`GET /v1/sessions/{id}` → `processor`) and in the status webhook:
+
+| Field | Description |
+|-------|-------------|
+| `webhook_transaction_id` | The `transaction_id` your endpoint returned |
+| `webhook_token` | The `token` your endpoint returned (tokenize mode) |
+| `card_brand` | Card brand |
+| `card_last4` | Last 4 digits |
+
+## Security Guarantees
+
+- **HTTPS enforced** at save time and again at send time; HTTP endpoints are rejected.
+- **Redirects are never followed** — card data can only reach the exact host you configured.
+- **Exactly one delivery attempt** per session — no retry double-charges.
+- **Every payload is signed** so you can prove the request came from Maven.
+- Maven **never stores or logs** the card data it forwards — only your returned IDs are persisted.
