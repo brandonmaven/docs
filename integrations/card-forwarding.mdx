@@ -144,6 +144,86 @@ Your returned IDs are echoed on the session (`GET /v1/sessions/{id}` → `proces
 | `card_brand` | Card brand |
 | `card_last4` | Last 4 digits |
 
+## Direct Gateway Integration (Custom Payloads)
+
+If you can't host a receiving endpoint without entering PCI scope, Maven can POST the collected card **directly to your payment gateway's API** — you define the exact request shape, auth header, and how to read the gateway's response. Configure it under **Card Forwarding → Advanced: direct gateway integration**.
+
+### Payload template
+
+A JSON object whose string values may contain `{{placeholders}}`. Static values (like your gateway key) pass through untouched. A string that is exactly one placeholder keeps its type (`"{{amount_cents}}"` becomes the number `2599`).
+
+Available placeholders:
+
+| Placeholder | Example |
+|---|---|
+| `card_number`, `cvv` | `4111111111111111`, `123` |
+| `exp_month`, `exp_year`, `exp_year_yy` | `05`, `2027`, `27` |
+| `exp_mmyy`, `exp_mmyyyy`, `exp_mm_slash_yy`, `exp_mm_slash_yyyy` | `0527`, `052027`, `05/27`, `05/2027` |
+| `amount_cents`, `amount_dollars`, `currency` | `2599`, `25.99`, `USD` |
+| `session_id`, `caller`, `description`, `mode`, `environment` | — |
+| `cardholder_name`, `first_name`, `last_name`, `postal_code` | — |
+| `card_brand`, `card_last4` | `visa`, `1111` |
+
+Unknown placeholders are rejected when you save, and again before any request is sent — Maven never transmits a half-rendered body.
+
+### Body format and headers
+
+- **Body format**: `JSON` or `Form-urlencoded` (many gateways, e.g. NMI, accept only form bodies).
+- **Custom headers**: per-environment JSON object, typically the gateway's auth header. The `Maven-Signature` header is still included and can be ignored by the gateway.
+
+### Success criteria
+
+Tells Maven how to read the gateway's response (parsed as JSON, or form-urlencoded like NMI's `response=1&transactionid=...`):
+
+```json
+{
+  "field": "response",
+  "equals": "1",
+  "transaction_id_field": "transactionid",
+  "token_field": "customer_vault_id",
+  "error_code_field": "response_code",
+  "error_message_field": "responsetext"
+}
+```
+
+- `field` + `equals` (or `one_of: [...]`) decide approval; dot-paths like `data.result` work for nested JSON.
+- HTTP status must be 2xx regardless; with no `field`, 2xx alone means success.
+- `transaction_id_field` / `token_field` values are stored on the session as `webhook_transaction_id` / `webhook_token`.
+
+### Example: NMI direct sale
+
+Body format `Form-urlencoded`, template:
+
+```json
+{
+  "type": "sale",
+  "security_key": "your-nmi-security-key",
+  "ccnumber": "{{card_number}}",
+  "ccexp": "{{exp_mmyy}}",
+  "cvv": "{{cvv}}",
+  "amount": "{{amount_dollars}}",
+  "zip": "{{postal_code}}",
+  "orderid": "{{session_id}}"
+}
+```
+
+Success criteria:
+
+```json
+{
+  "field": "response",
+  "equals": "1",
+  "transaction_id_field": "transactionid",
+  "error_message_field": "responsetext"
+}
+```
+
+For NMI vault-without-charge (tokenize mode), add `"customer_vault": "add_customer"` to the template and set `"token_field": "customer_vault_id"`.
+
+<Note>
+With a custom template, the request goes wherever your endpoint URL points — the same HTTPS-only, no-redirect, single-attempt guarantees apply. The default Maven payload and response contract continue to apply whenever no template is configured.
+</Note>
+
 ## Security Guarantees
 
 - **HTTPS enforced** at save time and again at send time; HTTP endpoints are rejected.
