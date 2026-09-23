@@ -1,0 +1,37 @@
+---
+title: NMI Setup
+description: Connect your NMI gateway account to Maven
+---
+
+# Connecting NMI
+
+Maven connects to NMI (Network Merchants) using your **security key** via the Payment API (Direct Post). Charges and Customer Vault tokens are created directly on your gateway account.
+
+## Getting Your Credentials
+
+1. Log into your NMI merchant portal (or your reseller's white-labeled portal).
+2. Go to **Settings → Security Keys** and create a key with API permissions.
+3. NMI sandbox keys come from a sandbox gateway account; production keys from your live account.
+
+## Connecting in Maven
+
+In the [Maven Dashboard](https://app.trymaven.com), open your app → **Payments** tab → **NMI** card:
+
+- **Environment**: Sandbox or Production
+- **Security Key**: your NMI security key
+- **Gateway URL override** (optional, production only): only if your NMI reseller uses a custom gateway domain. Leave blank for `secure.nmi.com`.
+
+You can also click **Copy link** to send your customer a single-use hosted form to enter their own key.
+
+## Processor Response Fields
+
+| Field | Description |
+|-------|-------------|
+| `nmi_transaction_id` | NMI transaction ID |
+| `nmi_customer_vault_id` | Customer Vault ID (tokenize mode) — charge it later with `customer_vault_id` on your own NMI calls |
+| `approval_code` | Authorization code |
+| `response_code` | NMI response code (`100` = approved) |
+| `response_message` | Response text |
+| `avs_response` / `cvv_response` | AVS and CVV results |
+
+In tokenize mode, Maven stores the card in your NMI **Customer Vault** — subsequent charges are one Direct Post call with `customer_vault_id`, no card data needed.

@@ -1,0 +1,41 @@
+---
+title: Clover Setup
+description: Connect your Clover merchant account to Maven
+---
+
+# Connecting Clover
+
+Maven connects to Clover via the **Ecommerce API** using your merchant's Ecommerce API tokens. Charges settle into your Clover merchant account alongside your in-store activity.
+
+## Getting Your Credentials
+
+1. Log into your [Clover dashboard](https://www.clover.com/dashboard) (sandbox: sandbox.dev.clover.com).
+2. Go to **Account & Setup → Ecommerce API Tokens**.
+3. Generate a token pair:
+   - **Public key (PAKMS)** — used to tokenize card data
+   - **Private token** — used to create charges and customers
+
+## Connecting in Maven
+
+In the [Maven Dashboard](https://app.trymaven.com), open your app → **Payments** tab → **Clover** card:
+
+- **Environment**: Sandbox or Production
+- **Public Key (PAKMS)**: your ecommerce public key
+- **Private Token**: your ecommerce private token
+
+You can also click **Copy link** to send the restaurant/merchant a single-use hosted form to enter their own tokens — useful when you run many locations.
+
+## Processor Response Fields
+
+| Field | Description |
+|-------|-------------|
+| `clover_charge_id` | Clover charge ID |
+| `clover_status` | `succeeded` (captured) or `authorized` |
+| `clover_customer_id` | Clover customer ID (tokenize mode) |
+| `card_brand` / `card_last4` | From Clover's tokenization response |
+
+In tokenize mode, Maven stores the card on a Clover **customer**; charge it later by passing the customer ID as the `source` on `/v1/charges`.
+
+<Note>
+Clover requires PCI DSS compliance for server-side card tokenization — Maven's PCI program covers the capture and tokenization path, so your integration stays out of CHD scope.
+</Note>

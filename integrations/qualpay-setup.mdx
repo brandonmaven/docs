@@ -1,0 +1,36 @@
+---
+title: Qualpay Setup
+description: Connect your Qualpay account to Maven
+---
+
+# Connecting Qualpay
+
+Maven connects to Qualpay using your **security key** and **merchant ID** via the Qualpay Payment Gateway API.
+
+## Getting Your Credentials
+
+1. Log into [Qualpay Manager](https://app.qualpay.com) (or the sandbox at app-test.qualpay.com).
+2. Go to **Administration → Security Keys** and create an API security key.
+3. Your merchant ID is shown in Qualpay Manager.
+
+## Connecting in Maven
+
+In the [Maven Dashboard](https://app.trymaven.com), open your app → **Payments** tab → **Qualpay** card:
+
+- **Environment**: Sandbox or Production
+- **Security Key**: your Qualpay API security key
+- **Merchant ID**: your Qualpay merchant ID
+
+You can also click **Copy link** to send your customer a single-use hosted form to enter their own credentials.
+
+## Processor Response Fields
+
+| Field | Description |
+|-------|-------------|
+| `qualpay_pg_id` | Payment gateway transaction ID |
+| `qualpay_card_id` | Tokenized card ID (tokenize mode, or when charges are tokenized) |
+| `approval_code` | Authorization code |
+| `response_code` | Qualpay `rcode` (`000` = approved) |
+| `response_message` | Qualpay `rmsg` |
+
+Maven flags voice payments as telephone-order (`moto_ecomm_ind`). In tokenize mode, the card is stored at Qualpay and the returned `card_id` can be charged later via `/pg/sale` with `card_id` instead of card data.

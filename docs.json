@@ -89,6 +89,9 @@
               "integrations/shift4-setup",
               "integrations/fiserv-setup",
               "integrations/jpmorgan-setup",
+              "integrations/nmi-setup",
+              "integrations/qualpay-setup",
+              "integrations/clover-setup",
               "integrations/card-forwarding"
             ]
           }
