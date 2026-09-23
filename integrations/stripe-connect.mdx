@@ -92,3 +92,44 @@ stripe.PaymentIntent.create(
 ## Disconnecting
 
 To disconnect Stripe, go to the **Payments** tab in your app and click **Disconnect**. Existing sessions won't be affected, but new sessions using the `stripe` gateway will fail.
+
+## Platform Mode (Multi-Merchant Platforms)
+
+If you are yourself a **Stripe Connect platform** — many connected accounts under your own platform API key — connecting each merchant to Maven individually doesn't scale. Platform Mode inverts the relationship: Maven calls Stripe with *your* platform key and routes each payment to the connected account you name per session.
+
+<Note>
+This is different from the standard connection above. Standard mode links one Stripe account to Maven's platform via OAuth. Platform Mode uses your own platform key and never touches Maven's Stripe platform — charges, tokens, and customers are created entirely under your accounts, and Maven takes no Stripe application fee.
+</Note>
+
+### Setup
+
+1. In your app's **Payments** tab, expand the **Stripe** card and find the **Platform Mode** section.
+2. Add your platform API key per environment (test / live). A **restricted key** is recommended — scope it to write access for PaymentIntents, PaymentMethods, and Customers, with connected-account access enabled.
+3. That's it — no per-merchant onboarding, no OAuth links.
+
+### Creating sessions
+
+Pass the target connected account on every session:
+
+```bash
+curl -X POST https://api.trymaven.com/v1/sessions \
+  -H "Authorization: Bearer mvn_live_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project": "my-platform",
+    "caller": "+14155551234",
+    "amount": 125.00,
+    "mode": "charge",
+    "gateway": "stripe",
+    "stripe_account": "acct_1ABC..."
+  }'
+```
+
+- `stripe_account` is **required** on every session when Platform Mode is configured (the API returns `stripe_account_required` otherwise).
+- In `tokenize` mode, the card is vaulted as a Customer + PaymentMethod **on that connected account** — the token is yours on your platform, permanently, independent of Maven.
+- Test-mode API keys use your test platform key; live keys use your live platform key.
+
+### Notes
+
+- The `moto` flag is set on PaymentIntents (phone payments are MOTO transactions) — ask Stripe support to enable MOTO on your platform if it isn't already.
+- Maven never takes an `application_fee` in Platform Mode.
