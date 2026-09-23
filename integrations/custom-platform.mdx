@@ -74,6 +74,7 @@ curl -X POST https://api.trymaven.com/v1/sessions \
 | `mode` | `charge` (process immediately) or `tokenize` (save card only) |
 | `description` | Optional — what the payment is for |
 | `callback` | Optional — phone number or SIP URI to transfer the caller back to after payment |
+| `stripe_account` | [Stripe Platform Mode](/integrations/stripe-connect#platform-mode-multi-merchant-platforms) only — the connected account (`acct_...`) on your own Stripe platform to charge or vault on |
 
 ### HTTP 201 Compatibility
 

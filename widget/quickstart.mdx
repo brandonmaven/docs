@@ -64,6 +64,12 @@ description: Embed Maven in your chatbot and collect your first payment in 10 mi
     ```
     </CodeGroup>
 
+    <Note>
+    Using [Stripe Platform Mode](/integrations/stripe-connect#platform-mode-multi-merchant-platforms)?
+    Add `"stripe_account": "acct_..."` to route the payment to one of your connected accounts —
+    it's required when a platform key is configured.
+    </Note>
+
     Response:
     ```json
     {

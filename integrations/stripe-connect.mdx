@@ -7,6 +7,10 @@ description: Connect your Stripe account to Maven via OAuth
 
 Maven uses Stripe Connect to process payments on your Stripe account. The setup uses OAuth — you authorize Maven to create charges on your behalf.
 
+<Note>
+Running a multi-merchant platform with many connected accounts under your own Stripe key? Skip the OAuth flow and use [Platform Mode](#platform-mode-multi-merchant-platforms) instead.
+</Note>
+
 ## Prerequisites
 
 - A Stripe account (test or live)
