@@ -1,0 +1,28 @@
+---
+title: Ecommpay Setup
+description: Connect your Ecommpay account to Maven
+---
+
+# Connecting Ecommpay
+
+Maven charges through the Ecommpay Gate API using your **project ID** and **secret key**, with HMAC-SHA512 request signing.
+
+## Connecting in Maven
+
+In the [Maven Dashboard](https://app.trymaven.com), open your app → **Payments** tab → **Ecommpay** card:
+
+- **Environment**: Sandbox or Production
+- **Project ID**: your Ecommpay Gate project ID
+- **Secret Key**: the Gate secret key for that project
+
+You can also click **Copy link** to send a single-use hosted form so your customer enters their own credentials.
+
+## Processor Response Fields
+
+| Field | Description |
+|-------|-------------|
+| `ecommpay_payment_id` | Ecommpay merchant payment ID |
+| `ecommpay_operation_id` | Ecommpay operation ID |
+| `ecommpay_payment_status` | `success` on success |
+
+Ecommpay allow-lists source IPs — add Maven's outbound IPs to your project settings or charges return 403. Payments require MOTO enabled on the project. Because the Gate API is callback-driven, Maven briefly polls for the final status.

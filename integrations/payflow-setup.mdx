@@ -1,0 +1,30 @@
+---
+title: PayPal Payflow Pro Setup
+description: Connect your PayPal Payflow Pro account to Maven
+---
+
+# Connecting PayPal Payflow Pro
+
+Maven charges through PayPal Payflow Pro using the NVP protocol with your Payflow credentials.
+
+## Connecting in Maven
+
+In the [Maven Dashboard](https://app.trymaven.com), open your app → **Payments** tab → **PayPal Payflow Pro** card:
+
+- **Environment**: Sandbox or Production
+- **Partner**: usually `PayPal`
+- **Merchant Login (Vendor)**: your Payflow merchant login
+- **API User**: defaults to the vendor if you have no extra API users
+- **API Password**: your Payflow password
+
+You can also click **Copy link** to send a single-use hosted form so your customer enters their own credentials.
+
+## Processor Response Fields
+
+| Field | Description |
+|-------|-------------|
+| `payflow_pnref` | Payflow PNREF (transaction ID) |
+| `approval_code` | authorization code (AUTHCODE) |
+| `response_code` | Payflow RESULT (`0` = approved) |
+
+Tokenize mode runs a $0 authorization and returns the PNREF, which you can reuse as a reference transaction (`ORIGID`). Enable reference transactions on your Payflow account first. Payflow charges in your account's configured currency.

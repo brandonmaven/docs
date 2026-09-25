@@ -1,0 +1,29 @@
+---
+title: Cybersource Setup
+description: Connect your Cybersource account to Maven
+---
+
+# Connecting Cybersource
+
+Maven charges through Cybersource (Visa Acceptance) using HTTP Signature authentication with your REST API key.
+
+## Connecting in Maven
+
+In the [Maven Dashboard](https://app.trymaven.com), open your app → **Payments** tab → **Cybersource** card:
+
+- **Environment**: Sandbox or Production
+- **Merchant ID**: your Cybersource merchant ID
+- **REST API Key ID**: the HTTP Signature key ID from Business Center → Key Management
+- **Shared Secret**: the base64 shared secret paired with that key
+
+You can also click **Copy link** to send a single-use hosted form so your customer enters their own credentials.
+
+## Processor Response Fields
+
+| Field | Description |
+|-------|-------------|
+| `cybersource_payment_id` | Cybersource payment ID |
+| `cybersource_status` | `AUTHORIZED` on success |
+| `cybersource_instrument_identifier_id` | TMS instrument identifier (tokenize mode) |
+
+Create a **REST — Shared Secret / HTTP Signature** key (not a JWT/certificate key) in the Business Center. Tokenization requires Token Management (TMS) enabled on the account.

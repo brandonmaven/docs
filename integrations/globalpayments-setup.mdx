@@ -1,0 +1,28 @@
+---
+title: Global Payments Setup
+description: Connect your Global Payments account to Maven
+---
+
+# Connecting Global Payments
+
+Maven charges through the Global Payments GP API using an **App ID** and **App Key**.
+
+## Connecting in Maven
+
+In the [Maven Dashboard](https://app.trymaven.com), open your app → **Payments** tab → **Global Payments** card:
+
+- **Environment**: Sandbox or Production
+- **App ID**: from the Global Payments developer portal
+- **App Key**: the app key paired with your App ID
+
+You can also click **Copy link** to send a single-use hosted form so your customer enters their own credentials.
+
+## Processor Response Fields
+
+| Field | Description |
+|-------|-------------|
+| `globalpayments_transaction_id` | GP API transaction ID (`TRN_...`) |
+| `globalpayments_status` | `CAPTURED` on success |
+| `globalpayments_payment_method_id` | stored payment method (`PMT_...`, tokenize mode) |
+
+Maven fetches a short-lived access token for each charge automatically — you only store the App ID and App Key. Payments are sent as MOTO.

@@ -1,0 +1,28 @@
+---
+title: Checkout.com Setup
+description: Connect your Checkout.com account to Maven
+---
+
+# Connecting Checkout.com
+
+Maven charges through Checkout.com with your **secret key** via the Payments API. Your account must have full card (SAQ D) processing enabled.
+
+## Connecting in Maven
+
+In the [Maven Dashboard](https://app.trymaven.com), open your app → **Payments** tab → **Checkout.com** card:
+
+- **Environment**: Sandbox or Production
+- **Secret Key**: `sk_sbox_...` (sandbox) or `sk_...` (production), from Dashboard → Developers → Keys
+- **Processing Channel ID**: optional (`pc_...`) — only if your account requires it
+
+You can also click **Copy link** to send a single-use hosted form so your customer enters their own credentials.
+
+## Processor Response Fields
+
+| Field | Description |
+|-------|-------------|
+| `checkoutcom_payment_id` | Checkout.com payment ID (`pay_...`) |
+| `checkoutcom_status` | payment status (`Authorized`/`Captured`) |
+| `checkoutcom_source_id` | reusable stored source (`src_...`, tokenize mode) |
+
+Contact your Checkout.com solution engineer to enable full card processing if charges return an access error.

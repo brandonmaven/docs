@@ -1,0 +1,30 @@
+---
+title: QuickBooks Payments Setup
+description: Connect your QuickBooks Payments account to Maven
+---
+
+# Connecting QuickBooks Payments
+
+Maven charges through the Intuit QuickBooks Payments API. You provide your Intuit app credentials plus an OAuth token pair; Maven refreshes tokens automatically.
+
+## Connecting in Maven
+
+In the [Maven Dashboard](https://app.trymaven.com), open your app → **Payments** tab → **QuickBooks Payments** card:
+
+- **Environment**: Sandbox or Production
+- **Client ID**: your Intuit app client ID
+- **Client Secret**: your Intuit app client secret
+- **Access Token**: initial OAuth access token (from the Intuit OAuth Playground)
+- **Refresh Token**: initial OAuth refresh token
+
+You can also click **Copy link** to send a single-use hosted form so your customer enters their own credentials.
+
+## Processor Response Fields
+
+| Field | Description |
+|-------|-------------|
+| `quickbooks_charge_id` | QuickBooks charge ID |
+| `quickbooks_status` | `CAPTURED` on success |
+| `quickbooks_card_id` | vaulted card ID (tokenize mode) |
+
+Maven refreshes and rotates your OAuth tokens automatically when they expire. Generate the initial token pair from the Intuit OAuth 2.0 Playground for your app.

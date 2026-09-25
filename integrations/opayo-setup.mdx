@@ -1,0 +1,28 @@
+---
+title: Opayo Setup
+description: Connect your Opayo account to Maven
+---
+
+# Connecting Opayo
+
+Maven charges through Opayo (Elavon) Direct using your **vendor name**. Opayo authenticates Direct integrations by vendor name plus IP allow-listing.
+
+## Connecting in Maven
+
+In the [Maven Dashboard](https://app.trymaven.com), open your app → **Payments** tab → **Opayo** card:
+
+- **Environment**: Sandbox or Production
+- **Opayo Vendor Name**: your Opayo vendor account name
+- **Default Currency**: optional — falls back to `GBP` when a session has no currency
+
+You can also click **Copy link** to send a single-use hosted form so your customer enters their own credentials.
+
+## Processor Response Fields
+
+| Field | Description |
+|-------|-------------|
+| `opayo_vps_tx_id` | Opayo VPSTxId |
+| `approval_code` | bank authorization code |
+| `opayo_security_key` | SecurityKey (needed for later refund/void) |
+
+You must add Maven's outbound IPs to your allow-list in MyOpayo, and your vendor needs a MOTO merchant account. Opayo Direct does not currently support standalone tokenization, so tokenize mode is unavailable.

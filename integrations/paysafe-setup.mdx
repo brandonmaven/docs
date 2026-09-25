@@ -1,0 +1,29 @@
+---
+title: Paysafe Setup
+description: Connect your Paysafe account to Maven
+---
+
+# Connecting Paysafe
+
+Maven charges through Paysafe's Card Payments API using an API key. The **Account ID** identifies the settlement account and its currency.
+
+## Connecting in Maven
+
+In the [Maven Dashboard](https://app.trymaven.com), open your app → **Payments** tab → **Paysafe** card:
+
+- **Environment**: Sandbox or Production
+- **API Key Username (Key ID)**: from the Paysafe Merchant Portal
+- **API Key Password**: the secret paired with the key ID
+- **Account ID (FMA)**: your Paysafe settlement account ID
+
+You can also click **Copy link** to send a single-use hosted form so your customer enters their own credentials.
+
+## Processor Response Fields
+
+| Field | Description |
+|-------|-------------|
+| `paysafe_auth_id` | Paysafe authorization ID |
+| `approval_code` | authorization code |
+| `paysafe_payment_token` | vault payment token (tokenize mode) |
+
+Each Paysafe account is fixed to one currency — pick the Account ID matching the currency you charge in. Tokenize mode stores the card in the Paysafe Customer Vault.

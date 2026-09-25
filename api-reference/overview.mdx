@@ -64,6 +64,41 @@ Endpoints for payments collected via the embeddable widget. See the [Chat Widget
 |--------|----------|-------------|
 | `GET` | `/health` | Service health check |
 
+## Payment Gateways
+
+The `gateway` field on session creation selects which processor charges the card. Maven charges through **your own** gateway account — connect credentials per app in the dashboard (see the [gateway setup guides](/integrations/stripe-connect)).
+
+| `gateway` value | Provider |
+|-----------------|----------|
+| `stripe` | Stripe |
+| `adyen` | Adyen |
+| `checkoutcom` | Checkout.com |
+| `braintree` | Braintree |
+| `authorizenet` | Authorize.net |
+| `cybersource` | Cybersource |
+| `worldpay` | Worldpay (Access) |
+| `globalpayments` | Global Payments |
+| `jpmorgan` | J.P. Morgan |
+| `fiserv` | Fiserv |
+| `shift4` | Shift4 |
+| `nmi` | NMI |
+| `qualpay` | Qualpay |
+| `clover` | Clover |
+| `paysafe` | Paysafe |
+| `usaepay` | USAePay |
+| `moneris` | Moneris |
+| `cardconnect` | CardConnect (CardPointe) |
+| `fortis` | Fortis |
+| `payflow` | PayPal Payflow Pro |
+| `opayo` | Opayo (Elavon) |
+| `fatzebra` | Fat Zebra |
+| `trustpayments` | Trust Payments |
+| `quickbooks` | QuickBooks Payments |
+| `ecommpay` | Ecommpay |
+| `webhook` | [Card forwarding](/integrations/card-forwarding) to your own endpoint |
+
+Each gateway returns provider-specific IDs in the session's `processor` object — see the individual [setup guides](/integrations/stripe-connect) for the exact fields.
+
 ## Rate Limits
 
 All endpoints are rate-limited per IP address.

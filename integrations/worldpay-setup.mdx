@@ -1,0 +1,29 @@
+---
+title: Worldpay Setup
+description: Connect your Worldpay account to Maven
+---
+
+# Connecting Worldpay
+
+Maven charges through Access Worldpay's Payments API using your API credentials.
+
+## Connecting in Maven
+
+In the [Maven Dashboard](https://app.trymaven.com), open your app → **Payments** tab → **Worldpay** card:
+
+- **Environment**: Sandbox or Production
+- **API Username**: your Access Worldpay API username
+- **API Password**: your Access Worldpay API password
+- **Merchant Entity**: usually `default`
+
+You can also click **Copy link** to send a single-use hosted form so your customer enters their own credentials.
+
+## Processor Response Fields
+
+| Field | Description |
+|-------|-------------|
+| `worldpay_payment_id` | Access Worldpay payment ID |
+| `worldpay_outcome` | `authorized` on success |
+| `worldpay_token_id` | stored card token (tokenize mode) |
+
+Payments are sent as MOTO. Your Worldpay merchant account must be enabled for MOTO transactions.

@@ -1,0 +1,28 @@
+---
+title: Moneris Setup
+description: Connect your Moneris account to Maven
+---
+
+# Connecting Moneris
+
+Maven charges through the Moneris Gateway using your **store ID** and **API token**.
+
+## Connecting in Maven
+
+In the [Maven Dashboard](https://app.trymaven.com), open your app → **Payments** tab → **Moneris** card:
+
+- **Environment**: Sandbox or Production
+- **Store ID**: your Moneris store ID, e.g. `monca01234`
+- **API Token**: from the Merchant Resource Center → Admin → Store Settings
+
+You can also click **Copy link** to send a single-use hosted form so your customer enters their own credentials.
+
+## Processor Response Fields
+
+| Field | Description |
+|-------|-------------|
+| `moneris_txn_id` | Moneris transaction ID (TransID) |
+| `moneris_receipt_id` | receipt ID |
+| `moneris_data_key` | Vault data key (tokenize mode) |
+
+Tokenize mode stores the card in the Moneris **Vault**. Moneris settles in your store's currency (CAD for Canadian merchants). The public test store is `store5` / `yesguy`.

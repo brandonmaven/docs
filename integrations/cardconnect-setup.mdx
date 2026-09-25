@@ -1,0 +1,30 @@
+---
+title: CardConnect Setup
+description: Connect your CardConnect account to Maven
+---
+
+# Connecting CardConnect
+
+Maven charges through the CardPointe Gateway (CardConnect) using HTTP Basic auth. The **site** is the subdomain of your CardPointe gateway URL.
+
+## Connecting in Maven
+
+In the [Maven Dashboard](https://app.trymaven.com), open your app → **Payments** tab → **CardConnect** card:
+
+- **Environment**: Sandbox or Production
+- **Site**: the subdomain of your gateway URL — test site is `fts-uat`
+- **Merchant ID (merchid)**: your CardPointe merchant ID
+- **API Username**: your CardPointe API username
+- **API Password**: your CardPointe API password
+
+You can also click **Copy link** to send a single-use hosted form so your customer enters their own credentials.
+
+## Processor Response Fields
+
+| Field | Description |
+|-------|-------------|
+| `cardconnect_retref` | CardPointe retrieval reference (retref) |
+| `cardconnect_token` | CardSecure token (auto-returned) |
+| `cardconnect_profile_id` | stored profile ID (tokenize mode) |
+
+The **site** must be the subdomain only (e.g. `fts-uat`), not a full URL. Tokenize mode creates a CardPointe profile you can reuse.

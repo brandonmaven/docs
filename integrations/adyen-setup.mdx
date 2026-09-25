@@ -1,0 +1,29 @@
+---
+title: Adyen Setup
+description: Connect your Adyen account to Maven
+---
+
+# Connecting Adyen
+
+Maven charges through Adyen using your **API key** and **merchant account** via the Checkout API. Production also needs your account's unique live URL prefix.
+
+## Connecting in Maven
+
+In the [Maven Dashboard](https://app.trymaven.com), open your app → **Payments** tab → **Adyen** card:
+
+- **Environment**: Sandbox or Production
+- **API Key**: from Adyen Customer Area → Developers → API credentials
+- **Merchant Account**: your Adyen merchant account code, e.g. `YourCompanyECOM`
+- **Live URL Prefix**: **production only** — from Developers → API URLs, e.g. `1797a841fbb37ca7-YourCompany`
+
+You can also click **Copy link** to send a single-use hosted form so your customer enters their own credentials.
+
+## Processor Response Fields
+
+| Field | Description |
+|-------|-------------|
+| `adyen_psp_reference` | Adyen pspReference |
+| `adyen_result_code` | `Authorised` on success |
+| `adyen_stored_payment_method_id` | reusable stored payment method (tokenize mode) |
+
+Voice and chat payments are sent as MOTO, so your Adyen merchant account must have MOTO enabled. Amounts are converted to Adyen minor units automatically.

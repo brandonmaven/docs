@@ -1,0 +1,29 @@
+---
+title: Trust Payments Setup
+description: Connect your Trust Payments account to Maven
+---
+
+# Connecting Trust Payments
+
+Maven charges through the Trust Payments Webservices API using your webservices credentials and site reference.
+
+## Connecting in Maven
+
+In the [Maven Dashboard](https://app.trymaven.com), open your app → **Payments** tab → **Trust Payments** card:
+
+- **Environment**: Sandbox or Production
+- **Webservices Username**: your webservices API username
+- **Webservices Password**: the paired password
+- **Site Reference**: your site reference — test references start with `test_`
+
+You can also click **Copy link** to send a single-use hosted form so your customer enters their own credentials.
+
+## Processor Response Fields
+
+| Field | Description |
+|-------|-------------|
+| `trustpayments_transaction_reference` | Trust Payments transaction reference |
+| `approval_code` | authorization code |
+| `response_code` | error code (`0` = success) |
+
+The environment is selected by your site reference (`test_` prefix = test). Tokenize mode runs a zero-value ACCOUNTCHECK; reuse the transaction reference as a parent for card-on-file charges.

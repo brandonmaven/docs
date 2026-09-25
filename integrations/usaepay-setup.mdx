@@ -1,0 +1,28 @@
+---
+title: USAePay Setup
+description: Connect your USAePay account to Maven
+---
+
+# Connecting USAePay
+
+Maven charges through USAePay's REST API using an API key and PIN.
+
+## Connecting in Maven
+
+In the [Maven Dashboard](https://app.trymaven.com), open your app → **Payments** tab → **USAePay** card:
+
+- **Environment**: Sandbox or Production
+- **API Key (Source Key)**: from Settings → API Keys in the USAePay console
+- **API PIN**: the PIN paired with the API key
+
+You can also click **Copy link** to send a single-use hosted form so your customer enters their own credentials.
+
+## Processor Response Fields
+
+| Field | Description |
+|-------|-------------|
+| `usaepay_refnum` | USAePay transaction reference number |
+| `response_code` | `A` = approved |
+| `usaepay_card_key` | saved card key (tokenize mode) |
+
+Create the API key with a PIN in the USAePay merchant console. Charges settle in your account's configured currency.

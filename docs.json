@@ -1,172 +1,188 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
-  "theme": "palm",
-  "name": "Maven",
-  "logo": {
-    "light": "/logo/maven.png",
-    "dark": "/logo/maven.png"
+ "$schema": "https://mintlify.com/docs.json",
+ "theme": "palm",
+ "name": "Maven",
+ "logo": {
+  "light": "/logo/maven.png",
+  "dark": "/logo/maven.png"
+ },
+ "favicon": "/favicon.png",
+ "colors": {
+  "primary": "#6366F1",
+  "light": "#818CF8",
+  "dark": "#4F46E5"
+ },
+ "fonts": {
+  "heading": {
+   "family": "Inter",
+   "weight": 600
   },
-  "favicon": "/favicon.png",
-  "colors": {
-    "primary": "#6366F1",
-    "light": "#818CF8",
-    "dark": "#4F46E5"
-  },
-  "fonts": {
-    "heading": {
-      "family": "Inter",
-      "weight": 600
-    },
-    "body": {
-      "family": "Inter",
-      "weight": 400
-    }
-  },
-  "background": {
-    "decoration": "grid"
-  },
-  "styling": {
-    "eyebrows": "breadcrumbs",
-    "codeblocks": "dark"
-  },
-  "icons": {
-    "library": "lucide"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Dashboard",
-        "href": "https://app.trymaven.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Get API Key",
-      "href": "https://app.trymaven.com"
-    }
-  },
-  "navigation": {
-    "tabs": [
-      {
-        "tab": "Documentation",
-        "icon": "book-open",
-        "groups": [
-          {
-            "group": "Getting Started",
-            "pages": [
-              "introduction",
-              "authentication",
-              "integrations/webhooks"
-            ]
-          },
-          {
-            "group": "Chat Payments",
-            "pages": [
-              "widget/overview",
-              "widget/quickstart",
-              "widget/sdk",
-              "widget/customization"
-            ]
-          },
-          {
-            "group": "Voice Payments",
-            "pages": [
-              "quickstart",
-              "voice-settings",
-              "testing",
-              "integrations/twilio",
-              "integrations/vapi",
-              "integrations/retell",
-              "integrations/custom-platform"
-            ]
-          },
-          {
-            "group": "Payment Gateways",
-            "pages": [
-              "integrations/stripe-connect",
-              "integrations/authorizenet-setup",
-              "integrations/braintree-setup",
-              "integrations/shift4-setup",
-              "integrations/fiserv-setup",
-              "integrations/jpmorgan-setup",
-              "integrations/nmi-setup",
-              "integrations/qualpay-setup",
-              "integrations/clover-setup",
-              "integrations/card-forwarding"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "API Reference",
-        "icon": "square-terminal",
-        "groups": [
-          {
-            "group": "Overview",
-            "pages": [
-              "api-reference/overview"
-            ]
-          },
-          {
-            "group": "Auth",
-            "openapi": "openapi.json",
-            "pages": [
-              "GET /v1/auth/check"
-            ]
-          },
-          {
-            "group": "Voice Sessions",
-            "openapi": "openapi.json",
-            "pages": [
-              "POST /v1/sessions",
-              "GET /v1/sessions",
-              "GET /v1/sessions/{session_id}",
-              "POST /v1/sessions/{session_id}/cancel"
-            ]
-          },
-          {
-            "group": "Widget Sessions",
-            "openapi": "openapi.json",
-            "pages": [
-              "POST /v1/widget-sessions"
-            ]
-          },
-          {
-            "group": "Apps",
-            "openapi": "openapi.json",
-            "pages": [
-              "GET /v1/projects"
-            ]
-          },
-          {
-            "group": "Health",
-            "openapi": "openapi.json",
-            "pages": [
-              "GET /health"
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  "api": {
-    "mdx": {
-      "server": "https://api.trymaven.com",
-      "auth": {
-        "method": "bearer"
-      }
-    },
-    "playground": {
-      "display": "interactive"
-    }
-  },
-  "footer": {
-    "socials": {
-      "website": "https://trymaven.com",
-      "github": "https://github.com/MavenPayments"
-    }
-  },
-  "feedback": {
-    "thumbsRating": true
+  "body": {
+   "family": "Inter",
+   "weight": 400
   }
+ },
+ "background": {
+  "decoration": "grid"
+ },
+ "styling": {
+  "eyebrows": "breadcrumbs",
+  "codeblocks": "dark"
+ },
+ "icons": {
+  "library": "lucide"
+ },
+ "navbar": {
+  "links": [
+   {
+    "label": "Dashboard",
+    "href": "https://app.trymaven.com"
+   }
+  ],
+  "primary": {
+   "type": "button",
+   "label": "Get API Key",
+   "href": "https://app.trymaven.com"
+  }
+ },
+ "navigation": {
+  "tabs": [
+   {
+    "tab": "Documentation",
+    "icon": "book-open",
+    "groups": [
+     {
+      "group": "Getting Started",
+      "pages": [
+       "introduction",
+       "authentication",
+       "integrations/webhooks"
+      ]
+     },
+     {
+      "group": "Chat Payments",
+      "pages": [
+       "widget/overview",
+       "widget/quickstart",
+       "widget/sdk",
+       "widget/customization"
+      ]
+     },
+     {
+      "group": "Voice Payments",
+      "pages": [
+       "quickstart",
+       "voice-settings",
+       "testing",
+       "integrations/twilio",
+       "integrations/vapi",
+       "integrations/retell",
+       "integrations/custom-platform"
+      ]
+     },
+     {
+      "group": "Payment Gateways",
+      "pages": [
+       "integrations/stripe-connect",
+       "integrations/authorizenet-setup",
+       "integrations/braintree-setup",
+       "integrations/shift4-setup",
+       "integrations/fiserv-setup",
+       "integrations/jpmorgan-setup",
+       "integrations/nmi-setup",
+       "integrations/qualpay-setup",
+       "integrations/clover-setup",
+       "integrations/adyen-setup",
+       "integrations/checkoutcom-setup",
+       "integrations/cybersource-setup",
+       "integrations/worldpay-setup",
+       "integrations/usaepay-setup",
+       "integrations/moneris-setup",
+       "integrations/globalpayments-setup",
+       "integrations/cardconnect-setup",
+       "integrations/paysafe-setup",
+       "integrations/fortis-setup",
+       "integrations/payflow-setup",
+       "integrations/opayo-setup",
+       "integrations/fatzebra-setup",
+       "integrations/trustpayments-setup",
+       "integrations/quickbooks-setup",
+       "integrations/ecommpay-setup",
+       "integrations/card-forwarding"
+      ]
+     }
+    ]
+   },
+   {
+    "tab": "API Reference",
+    "icon": "square-terminal",
+    "groups": [
+     {
+      "group": "Overview",
+      "pages": [
+       "api-reference/overview"
+      ]
+     },
+     {
+      "group": "Auth",
+      "openapi": "openapi.json",
+      "pages": [
+       "GET /v1/auth/check"
+      ]
+     },
+     {
+      "group": "Voice Sessions",
+      "openapi": "openapi.json",
+      "pages": [
+       "POST /v1/sessions",
+       "GET /v1/sessions",
+       "GET /v1/sessions/{session_id}",
+       "POST /v1/sessions/{session_id}/cancel"
+      ]
+     },
+     {
+      "group": "Widget Sessions",
+      "openapi": "openapi.json",
+      "pages": [
+       "POST /v1/widget-sessions"
+      ]
+     },
+     {
+      "group": "Apps",
+      "openapi": "openapi.json",
+      "pages": [
+       "GET /v1/projects"
+      ]
+     },
+     {
+      "group": "Health",
+      "openapi": "openapi.json",
+      "pages": [
+       "GET /health"
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "api": {
+  "mdx": {
+   "server": "https://api.trymaven.com",
+   "auth": {
+    "method": "bearer"
+   }
+  },
+  "playground": {
+   "display": "interactive"
+  }
+ },
+ "footer": {
+  "socials": {
+   "website": "https://trymaven.com",
+   "github": "https://github.com/MavenPayments"
+  }
+ },
+ "feedback": {
+  "thumbsRating": true
+ }
 }

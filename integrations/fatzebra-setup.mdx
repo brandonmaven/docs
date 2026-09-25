@@ -1,0 +1,28 @@
+---
+title: Fat Zebra Setup
+description: Connect your Fat Zebra account to Maven
+---
+
+# Connecting Fat Zebra
+
+Maven charges through Fat Zebra's REST API using your username and token.
+
+## Connecting in Maven
+
+In the [Maven Dashboard](https://app.trymaven.com), open your app → **Payments** tab → **Fat Zebra** card:
+
+- **Environment**: Sandbox or Production
+- **API Username**: e.g. `TEST-yourcompany`
+- **API Token**: your Fat Zebra API token
+
+You can also click **Copy link** to send a single-use hosted form so your customer enters their own credentials.
+
+## Processor Response Fields
+
+| Field | Description |
+|-------|-------------|
+| `fatzebra_purchase_id` | Fat Zebra purchase ID |
+| `approval_code` | authorization code |
+| `fatzebra_card_token` | card token (auto-returned; reuse for card-on-file) |
+
+Fat Zebra returns a reusable card token on every approved purchase. Amounts are sent in integer cents.

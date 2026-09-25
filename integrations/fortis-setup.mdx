@@ -1,0 +1,30 @@
+---
+title: Fortis Setup
+description: Connect your Fortis account to Maven
+---
+
+# Connecting Fortis
+
+Maven charges through the Fortis Platform API using a user ID, API key, and the location transactions post to.
+
+## Connecting in Maven
+
+In the [Maven Dashboard](https://app.trymaven.com), open your app → **Payments** tab → **Fortis** card:
+
+- **Environment**: Sandbox or Production
+- **API User ID**: from your Fortis dashboard
+- **User API Key**: the key paired with the user ID
+- **Location ID**: the Fortis location transactions post to
+- **Developer ID**: optional — your partner developer ID if provided
+
+You can also click **Copy link** to send a single-use hosted form so your customer enters their own credentials.
+
+## Processor Response Fields
+
+| Field | Description |
+|-------|-------------|
+| `fortis_transaction_id` | Fortis transaction ID |
+| `approval_code` | authorization code |
+| `fortis_token_id` | card token (tokenize mode) |
+
+Amounts are sent to Fortis in integer cents. The Location ID determines which merchant location the charge settles to.
